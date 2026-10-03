@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace ContraptionMine
 {
-    public enum PartType { Frame, Wheel, Engine, Cargo, Spring, Balloon, HeavyWheel, PowerfulEngine }
+    public enum PartType { Frame, Wheel, Engine, Cargo, Spring, Balloon, HeavyWheel, PowerfulEngine, Propeller, Ballast }
     [CreateAssetMenu(menuName = "Contraption Mine/Part")]
     public sealed class PartData : ScriptableObject
     {

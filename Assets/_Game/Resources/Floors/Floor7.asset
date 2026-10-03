@@ -10,36 +10,47 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 223783cf7db324bf182dc216037184a5, type: 3}
-  m_Name: Floor3
+  m_Name: Floor7
   m_EditorClassIdentifier: Assembly-CSharp::ContraptionMine.FloorData
-  trackPrefab: {fileID: 3561424285148485887, guid: e9be780a1d85d44829d8e37fc3b03a8d, type: 3}
+  trackPrefab: {fileID: 1090603342294640259, guid: c06da26a6443a4b04bed5cc100b8cc21, type: 3}
   oreType: 0
-  zones: []
-  number: 3
-  requiredOre: 15
-  unlockPrice: 900
-  distance: 150
-  multiplier: 4
-  challenge: GAP & OBSTACLE
+  zones:
+  - kind: 0
+    from: 24
+    to: 67
+    strength: 0
+  - kind: 1
+    from: 39
+    to: 68
+    strength: 3.65
+  number: 7
+  requiredOre: 20
+  unlockPrice: 23000
+  distance: 120
+  multiplier: 18
+  challenge: FROST TUNNEL
   terrain:
   - {x: -8, y: 0}
   - {x: 18, y: 0}
-  - {x: 29, y: 2.4}
-  - {x: 35, y: 2.4}
-  - {x: 38, y: 1.6}
-  - {x: 48, y: 1.9}
-  - {x: 61, y: 0.2}
-  - {x: 76, y: 3}
-  - {x: 90, y: 1}
-  - {x: 104, y: 1.6}
-  - {x: 115, y: 0}
-  - {x: 175, y: 0}
-  gapAfter: 3
+  - {x: 28, y: 0.6}
+  - {x: 40, y: 0.2}
+  - {x: 57, y: 0.2}
+  - {x: 69, y: 0.3}
+  - {x: 79, y: 1}
+  - {x: 88, y: 0.2}
+  - {x: 98, y: 0.8}
+  - {x: 108, y: 0}
+  - {x: 145, y: 0}
+  gapAfter: -1
   extraGaps: 
-  rockTint: {r: 0.57, g: 0.31, b: 0.15, a: 1}
+  rockTint: {r: 0.25, g: 0.25, b: 0.48, a: 1}
   blueprint:
     parts:
-    - type: 2
+    - type: 7
+      x: 0
+      y: 2
+      rotation: 0
+    - type: 0
       x: 1
       y: 2
       rotation: 0
@@ -55,16 +66,20 @@ MonoBehaviour:
       x: 4
       y: 2
       rotation: 0
-    - type: 1
+    - type: 0
+      x: 5
+      y: 2
+      rotation: 0
+    - type: 6
       x: 1
       y: 1
       rotation: 0
-    - type: 1
+    - type: 6
       x: 5
       y: 1
       rotation: 0
     - type: 3
-      x: 3
+      x: 1
       y: 3
       rotation: 0
     - type: 3
@@ -72,14 +87,22 @@ MonoBehaviour:
       y: 3
       rotation: 0
     - type: 3
-      x: 4
+      x: 3
       y: 3
       rotation: 0
-    - type: 5
-      x: 3
-      y: 4
+    - type: 3
+      x: 4
+      y: 3
       rotation: 0
     - type: 4
-      x: 5
+      x: 6
       y: 2
+      rotation: 0
+    - type: 9
+      x: 3
+      y: 1
+      rotation: 0
+    - type: 8
+      x: 6
+      y: 3
       rotation: 0

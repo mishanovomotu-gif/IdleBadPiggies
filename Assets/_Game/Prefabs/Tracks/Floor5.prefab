@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &5350810805945785317
+--- !u!1 &6515657862289989429
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,32 +8,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6367582074279469805}
-  - component: {fileID: 1884349959164631455}
-  - component: {fileID: 8458111212699152094}
-  - component: {fileID: 1284875546227897156}
-  - component: {fileID: 943769831177233994}
-  - component: {fileID: 8553440843176400225}
-  - component: {fileID: 3605103372192790678}
-  - component: {fileID: 9164294831514827969}
-  - component: {fileID: 5537798278898024116}
-  - component: {fileID: 4373408237406933373}
-  - component: {fileID: 9015811727941947446}
-  - component: {fileID: 1944798125004424716}
+  - component: {fileID: 3709004482962837022}
+  - component: {fileID: 3252354115041141619}
+  - component: {fileID: 392821594611027878}
+  - component: {fileID: 1047310840171476016}
+  - component: {fileID: 2059617787124256508}
+  - component: {fileID: 5081002684530590289}
+  - component: {fileID: 5132768689588555288}
+  - component: {fileID: 7330561983988578213}
+  - component: {fileID: 1024050024485612354}
+  - component: {fileID: 7759257500018690905}
+  - component: {fileID: 4480947350908342947}
   m_Layer: 0
-  m_Name: Floor2
+  m_Name: Floor5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6367582074279469805
+--- !u!4 &3709004482962837022
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -42,13 +41,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!68 &1884349959164631455
+--- !u!68 &3252354115041141619
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -80,18 +79,18 @@ EdgeCollider2D:
   m_EdgeRadius: 0.07
   m_Points:
   - {x: -8, y: 0}
-  - {x: 14, y: 0}
+  - {x: 18, y: 0}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &8458111212699152094
+--- !u!68 &392821594611027878
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -122,19 +121,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 14, y: 0}
-  - {x: 23, y: 2.2}
+  - {x: 18, y: 0}
+  - {x: 29, y: 2}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &1284875546227897156
+--- !u!68 &1047310840171476016
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -165,19 +164,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 23, y: 2.2}
-  - {x: 32, y: 0.3}
+  - {x: 29, y: 2}
+  - {x: 39, y: 4}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &943769831177233994
+--- !u!68 &2059617787124256508
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -208,19 +207,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 32, y: 0.3}
-  - {x: 39, y: 1}
+  - {x: 39, y: 4}
+  - {x: 48, y: 4}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &8553440843176400225
+--- !u!68 &5081002684530590289
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -251,19 +250,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 39, y: 1}
-  - {x: 44, y: 0.1}
+  - {x: 48, y: 4}
+  - {x: 59, y: 1}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &3605103372192790678
+--- !u!68 &5132768689588555288
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -294,105 +293,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 44, y: 0.1}
-  - {x: 50, y: 0.9}
+  - {x: 59, y: 1}
+  - {x: 69, y: 1.8}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &9164294831514827969
+--- !u!68 &7330561983988578213
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 6200000, guid: b31e7249a392d4b39b443238c00de49b, type: 2}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_EdgeRadius: 0.07
-  m_Points:
-  - {x: 50, y: 0.9}
-  - {x: 56, y: -0.5}
-  m_AdjacentStartPoint: {x: 0, y: 0}
-  m_AdjacentEndPoint: {x: 0, y: 0}
-  m_UseAdjacentStartPoint: 0
-  m_UseAdjacentEndPoint: 0
---- !u!68 &5537798278898024116
-EdgeCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 6200000, guid: b31e7249a392d4b39b443238c00de49b, type: 2}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_EdgeRadius: 0.07
-  m_Points:
-  - {x: 56, y: -0.5}
-  - {x: 61, y: -0.5}
-  m_AdjacentStartPoint: {x: 0, y: 0}
-  m_AdjacentEndPoint: {x: 0, y: 0}
-  m_UseAdjacentStartPoint: 0
-  m_UseAdjacentEndPoint: 0
---- !u!68 &4373408237406933373
-EdgeCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -423,19 +336,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 61, y: -0.5}
-  - {x: 69, y: 1.3}
+  - {x: 69, y: 1.8}
+  - {x: 78, y: 0.4}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &9015811727941947446
+--- !u!68 &1024050024485612354
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -466,19 +379,19 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 69, y: 1.3}
-  - {x: 80, y: 0}
+  - {x: 78, y: 0.4}
+  - {x: 90, y: 2.2}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0
   m_UseAdjacentEndPoint: 0
---- !u!68 &1944798125004424716
+--- !u!68 &7759257500018690905
 EdgeCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5350810805945785317}
+  m_GameObject: {fileID: 6515657862289989429}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -509,8 +422,51 @@ EdgeCollider2D:
   m_Offset: {x: 0, y: 0}
   m_EdgeRadius: 0.07
   m_Points:
-  - {x: 80, y: 0}
-  - {x: 130, y: 0}
+  - {x: 90, y: 2.2}
+  - {x: 104, y: 0}
+  m_AdjacentStartPoint: {x: 0, y: 0}
+  m_AdjacentEndPoint: {x: 0, y: 0}
+  m_UseAdjacentStartPoint: 0
+  m_UseAdjacentEndPoint: 0
+--- !u!68 &4480947350908342947
+EdgeCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6515657862289989429}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_EdgeRadius: 0.07
+  m_Points:
+  - {x: 104, y: 0}
+  - {x: 150, y: 0}
   m_AdjacentStartPoint: {x: 0, y: 0}
   m_AdjacentEndPoint: {x: 0, y: 0}
   m_UseAdjacentStartPoint: 0

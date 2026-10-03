@@ -1,23 +1,44 @@
-# Prototype validation
+# Validation — nine floors, challenges, contraption tradeoffs
 
-Validated on Unity 6000.3.6f1 (6.3 LTS), macOS, using a temporary project copy so the existing Unity session stayed open.
+Validated with Unity 6000.3.6f1 (6.3 LTS), macOS, in an isolated temporary project copy. The existing editor session and normal save were preserved; smoke tests use a separate PlayerPrefs key.
 
-## Physics and gameplay
+## Real game loop
 
-Unity compiled the runtime and editor scripts successfully. The final play-mode smoke test ran the actual MineGame interface, track prefabs, vehicle spawner, motors, suspension, lift, cargo weights, success checks, and scoring.
+All nine level-1 starter blueprints completed their courses, met the ore requirement, and could be automated. The integration test used the same selection/start/automation methods as the UI, checked preceding-floor automation and paid unlocking, and verified the ore-value scoring formula.
 
-| Starter | Delivered | Time | Production |
-| --- | ---: | ---: | ---: |
-| Floor 1 | 5 ore | 10.69s | 28.1 coins/min |
-| Floor 2 | 10 ore | 17.16s | 69.9 coins/min |
-| Floor 3 | 15 ore | 23.60s | 152.5 coins/min |
+| Floor | Ore delivered | Completion | Coins/min |
+| --- | --- | ---: | ---: |
+| 1 | 5 crystal | 11.59s | 25.9 |
+| 2 | 10 copper | 24.98s | 55.2 |
+| 3 | 15 crystal | 23.23s | 155.0 |
+| 4 | 20 crystal | 16.83s | 427.9 |
+| 5 | 25 copper | 21.43s | 724.5 |
+| 6 | 30 crystal | 21.34s | 1,180.6 |
+| 7 | 20 crystal | 18.57s | 1,162.9 |
+| 8 | 25 gold | 21.73s | 2,382.0 |
+| 9 | 30 gold | 17.99s | 4,502.4 |
 
-All starters met their floor requirement before the 30-second limit. Floor 3 currently runs slightly longer than the brief's approximate 10–20-second target. Simulation timing is measured inside Unity and small variations between runs are expected.
+Completion times vary with scheduling/physics; both full integration runs passed all nine floors. Floor 2 is the slowest starter because of its icy valley; all passed the 30-second limit.
 
-The smoke test also verified automation after each run, preservation of automated rates while designs are edited, rejection of a missing-engine build without charging coins, and a PlayerPrefs roundtrip preserving automated records and grid configurations. Standalone checks verified the eight-hour offline cap and JSON serialization. A portrait render was inspected for readable controls and the physics viewport.
+The play-mode test also checked missing-engine rejection, successful-result metrics, saved designs/records/new part arrays/latest attempts, and preservation of automated income after edits. Forced fall, flip, stall, timeout, and wheel-break conditions exercised the actual failure detection and result/hint branches; they did not replace successful records or automated income.
 
-No gameplay errors were logged in the final smoke run. Unity's editor SearchDatabase indexer logged startup exceptions in the temporary batch project; these came from UnityEditor.Search, before the gameplay test, rather than the prototype. Desktop click/touch interaction and mobile device deployment have not been manually tested.
+## Physics and authored course checks
 
-## Deliberate prototype constraints
+Standalone physics simulation passed all nine authored collider prefabs. The course factory is shared by setup and the runtime fallback, including boundaries of ice zones and physical roofs. Regression checks verified:
 
-Colored generated shapes replace the reference illustration's art. Frames are a single compound rigid body; wheels are separate rigid bodies attached with WheelJoint2D. Critical wheel detachment fails a run; structural frames do not break. Springs affect suspension on the whole hauler, cargo remains secured, and balloons add lift with light stabilization. Automated floors use recorded results without continuing physics simulation.
+- Propellers above/below a chassis generate opposite pitch directions and positive forward thrust.
+- Ballast below the frame lowers centre of mass compared with the same ballast above it.
+- Gold adds more payload/body mass than crystal for the same cargo capacity.
+- Authored icy surfaces retain a persistent low-friction material in their saved prefabs.
+- Migration retains old eight-part upgrades/unlocks while adding default levels and locked new parts.
+- Legacy floor expansion preserves coins, floor state, and recorded automated income.
+- Save JSON roundtrip and eight-hour offline-income cap.
+- Fixed portrait fitting stays within 1080×1920, 1179×2556, landscape 1920×1080, and inset safe-area rectangles.
+
+The physics uses a compound chassis and wheel joints, with explicit mass distribution, softer spring suspension, placed balloon lift, placed propeller thrust, and local wind forces. Decorative connections add no mass or colliders. Airtime uses wheel contact; impact speed measures the collision velocity normal, including wheel impacts. Cargo is secured and does not spill.
+
+## Visual verification
+
+The expanded workshop and third floor page were rendered and inspected. The final result panel, ore appearances, ten-item palette, briefing, and controls are captured in `Run-feedback-preview.png`. Screenshots use the same runtime UI and an editor-only offscreen rendering helper.
+
+No physical phone deployment was tested. The portrait safe-area fit is covered by geometric regression checks; the rendered preview is 540×960. These checks establish starter completion and functional progression, rather than proving every possible player build is balanced.

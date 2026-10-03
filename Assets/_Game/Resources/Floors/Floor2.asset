@@ -13,6 +13,12 @@ MonoBehaviour:
   m_Name: Floor2
   m_EditorClassIdentifier: Assembly-CSharp::ContraptionMine.FloorData
   trackPrefab: {fileID: 5350810805945785317, guid: b0cc76b08b8fd43e0bb874238cb2d617, type: 3}
+  oreType: 1
+  zones:
+  - kind: 0
+    from: 50
+    to: 61
+    strength: 0
   number: 2
   requiredOre: 10
   unlockPrice: 250
@@ -33,6 +39,8 @@ MonoBehaviour:
   - {x: 80, y: 0}
   - {x: 130, y: 0}
   gapAfter: -1
+  extraGaps: 
+  rockTint: {r: 0.57, g: 0.31, b: 0.15, a: 1}
   blueprint:
     parts:
     - type: 2

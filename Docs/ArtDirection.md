@@ -1,0 +1,9 @@
+# Cartoon mine art
+
+The supplied Contraption Mine image guided the saturated blue panels, rounded bevels, timber sign, gold accents, bright green play/automation buttons, cyan crystals, and friendly piggy driver. The interactive UI, icons, wood frames, tires, engine blocks, ore trays, springs, balloons, and driver are drawn by `MineArt.cs` and shared between the workshop and physical vehicle sprites.
+
+The backdrop was generated using the built-in **imagegen** tool and saved as `Assets/_Game/Resources/Art/MineBackdrop.png`. It is decorative scenery; collision surfaces, vehicle parts, text, and controls remain separate Unity objects. No art was extracted from the supplied screenshot.
+
+Exact generation prompt:
+
+> Use case: stylized-concept. Asset type: background illustration for a 2D side-view cartoon mining vehicle game, used behind gameplay and never as an interface screenshot. Create a wide landscape 3:2 panoramic underground crystal mine. Match the cheerful chunky hand-painted mobile-game direction of the user's Contraption Mine reference: orange faceted rocks, oversized warm timber supports, amber hanging lanterns, blue and violet receding cavern shapes and glowing turquoise crystals. Original artwork, playful toy-like materials, bold silhouettes, soft cel shading with rich warm highlights. Composition: empty spacious middle and lower middle for a vehicle and separately rendered terrain, decorative rocks at far left/right and lower corners, timber posts mostly at sides, layered distant cavern silhouettes. The ground/route will be rendered separately so do not draw any foreground track, wheels, vehicles, people, pigs, interface panels, buttons, numbers or words. This is background scenery only. No logos, no text, no watermark. Keep contrast low in the middle so an orange vehicle remains readable, lanterns and crystals bright around the perimeter.
