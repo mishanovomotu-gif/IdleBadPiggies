@@ -1,44 +1,58 @@
-# Validation — nine floors, challenges, contraption tradeoffs
+# Validation — idle mine economy and separated UI
 
-Validated with Unity 6000.3.6f1 (6.3 LTS), macOS, in an isolated temporary project copy. The existing editor session and normal save were preserved; smoke tests use a separate PlayerPrefs key.
+Unity 6000.3.6f1 (6.3 LTS), macOS. Validation ran in an isolated project copy using a separate PlayerPrefs key, preserving the existing editor and normal save.
 
-## Real game loop
+## Starter tracks and actual progression
 
-All nine level-1 starter blueprints completed their courses, met the ore requirement, and could be automated. The integration test used the same selection/start/automation methods as the UI, checked preceding-floor automation and paid unlocking, and verified the ore-value scoring formula.
+All twelve level-1 starter vehicles completed their authored tracks in standalone physics simulation. The full play-mode loop also completed all twelve, recorded their output, hired managers, and verified exact coin charges for floor unlocks. Floors 10–12 initially rejected insufficient mine output without charging coins; purchasing crew/loading upgrades through the game actions met their gates and allowed progression.
 
-| Floor | Ore delivered | Completion | Coins/min |
+| Floor | Ore | Final play-mode time | Base output/min |
 | --- | --- | ---: | ---: |
-| 1 | 5 crystal | 11.59s | 25.9 |
+| 1 | 5 crystal | 11.62s | 25.8 |
 | 2 | 10 copper | 24.98s | 55.2 |
-| 3 | 15 crystal | 23.23s | 155.0 |
-| 4 | 20 crystal | 16.83s | 427.9 |
-| 5 | 25 copper | 21.43s | 724.5 |
-| 6 | 30 crystal | 21.34s | 1,180.6 |
-| 7 | 20 crystal | 18.57s | 1,162.9 |
-| 8 | 25 gold | 21.73s | 2,382.0 |
-| 9 | 30 gold | 17.99s | 4,502.4 |
+| 3 | 15 crystal | 22.54s | 159.7 |
+| 4 | 20 crystal | 17.72s | 406.3 |
+| 5 | 25 copper | 18.12s | 856.8 |
+| 6 | 30 crystal | 18.78s | 1,341.8 |
+| 7 | 20 crystal | 21.12s | 1,022.7 |
+| 8 | 25 gold | 21.62s | 2,393.6 |
+| 9 | 30 gold | 16.52s | 4,903.1 |
+| 10 | 20 crystal | 15.08s | 47,744.9 |
+| 11 | 25 copper | 20.48s | 176,877.5 |
+| 12 | 30 gold | 18.08s | 1,120,008.0 |
 
-Completion times vary with scheduling/physics; both full integration runs passed all nine floors. Floor 2 is the slowest starter because of its icy valley; all passed the 30-second limit.
+These are base recorded rates before idle multipliers. Completion times vary with physics and scheduling. One earlier repeated integration run timed out on Floor 3; the final run passed after the timer was changed to count fixed physics steps, aligning scored time with simulation rather than UI rendering. This is not a guarantee that every user-built or upgraded vehicle will finish.
 
-The play-mode test also checked missing-engine rejection, successful-result metrics, saved designs/records/new part arrays/latest attempts, and preservation of automated income after edits. Forced fall, flip, stall, timeout, and wheel-break conditions exercised the actual failure detection and result/hint branches; they did not replace successful records or automated income.
+The real game loop checked ore scoring, missing-engine rejection, production/manager actions, saved designs and records, and preservation of recorded output after edits. Forced fall, flip, stall, timeout, and wheel-break conditions exercised failure feedback without replacing successful production records.
 
-## Physics and authored course checks
+## Idle economy regression checks
 
-Standalone physics simulation passed all nine authored collider prefabs. The course factory is shared by setup and the runtime fallback, including boundaries of ice zones and physical roofs. Regression checks verified:
+The final standalone economy suite passed:
 
-- Propellers above/below a chassis generate opposite pitch directions and positive forward thrust.
-- Ballast below the frame lowers centre of mass compared with the same ballast above it.
-- Gold adds more payload/body mass than crystal for the same cargo capacity.
-- Authored icy surfaces retain a persistent low-friction material in their saved prefabs.
-- Migration retains old eight-part upgrades/unlocks while adding default levels and locked new parts.
-- Legacy floor expansion preserves coins, floor state, and recorded automated income.
-- Save JSON roundtrip and eight-hour offline-income cap.
-- Fixed portrait fitting stays within 1080×1920, 1179×2556, landscape 1920×1080, and inset safe-area rectangles.
+- Unmanaged output enters storage; collection credits it exactly once.
+- Managers flush waiting storage, collect automatically, and grant the 20% bonus.
+- Crew/loading upgrades increase effective output without modifying the recorded run.
+- Buy 10 costs the same as ten Buy 1 purchases; Max buys only affordable levels and cannot overspend. Level caps are enforced.
+- Ore refineries affect their corresponding ore floors only.
+- Managed offline rewards cap at four hours; manual storage also caps at four hours of current output. Backward clocks earn nothing.
+- Legacy recorded floors retain automatic collection through manager migration.
+- Certificates fund permanent research; prestige awards the expected amount and cannot be repeated immediately.
+- Prestige clears ordinary progression, preserving designs, successful records, part unlocks/upgrades, certificates, and permanent research.
+- Economy JSON save roundtrip preserves these fields.
+- Deep floor output gates are 30K, 200K, and 1M per minute.
 
-The physics uses a compound chassis and wheel joints, with explicit mass distribution, softer spring suspension, placed balloon lift, placed propeller thrust, and local wind forces. Decorative connections add no mass or colliders. Airtime uses wheel contact; impact speed measures the collision velocity normal, including wheel impacts. Cargo is secured and does not spill.
+The play-mode prestige action also passed reset/retention checks and successfully restarted Floor 1 from its saved run without another test. The pre-prestige validation state was restored for screenshots.
 
-## Visual verification
+## Physics and layout checks
 
-The expanded workshop and third floor page were rendered and inspected. The final result panel, ore appearances, ten-item palette, briefing, and controls are captured in `Run-feedback-preview.png`. Screenshots use the same runtime UI and an editor-only offscreen rendering helper.
+Earlier and final checks verified thrust above/below the chassis produces opposite pitch, low ballast lowers centre of mass, gold increases payload mass relative to crystal, and saved icy track prefabs retain their low-friction material. The shared course factory creates ice-zone boundaries, roofs, and matching authored/fallback colliders.
 
-No physical phone deployment was tested. The portrait safe-area fit is covered by geometric regression checks; the rendered preview is 540×960. These checks establish starter completion and functional progression, rather than proving every possible player build is balanced.
+Portrait fitting stays within 1080×1920, the reported 1179×2556 resolution, landscape 1920×1080, and inset safe-area rectangles. Decorative chassis connections add no mass or colliders. Delivery loops are UI illustrations of recorded vehicles; payouts depend on elapsed time and production state, independently of animation.
+
+## Visual checks and limits
+
+Separate Mine, floor management, Workshop, Research, and Prestige views were rendered from the successfully validated test state. Physics diagnostics are optional; developer tools sit inside Menu. Modal overlays block controls behind them. Snapshots are editor-only captures of the actual runtime UI.
+
+Physical phone deployment and long-term human playtesting were not performed. Late-floor gates, costs, and multiplier curves are a first balance pass, intended for iteration after player feedback. The tests establish transaction correctness, save compatibility, functional progression, and starter completion rather than proving the economy's pacing is final.
+
+Preview artifacts: `Idle-mine-preview.png`, `Floor-management-preview.png`, `Workshop-preview.png`, `Research-preview.png`, `Prestige-preview.png`, and `Prestige-confirmation-preview.png`. Final runtime/editor scripts were compared with the compiled preview copy and matched.

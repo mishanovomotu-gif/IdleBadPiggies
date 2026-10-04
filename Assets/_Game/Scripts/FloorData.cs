@@ -6,7 +6,7 @@ namespace ContraptionMine
     public sealed class FloorData : ScriptableObject
     {
         public GameObject trackPrefab;
-        public OreType oreType;
+        public OreType oreType; public double outputGate;
         public ChallengeZone[] zones = Array.Empty<ChallengeZone>();
         public float OreMass => oreType switch { OreType.Copper => .38f, OreType.Gold => .48f, _ => .32f };
         public float OreValue => oreType switch { OreType.Copper => 1.15f, OreType.Gold => 1.5f, _ => 1 };

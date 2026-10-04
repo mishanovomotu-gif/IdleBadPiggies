@@ -56,6 +56,8 @@ namespace ContraptionMine
             6 => "Two gaps + a crosswind. Spread lift across the chassis.",
             7 => "Ice run + a low tunnel + exit bumps. Keep a low profile.",
             8 => "Dense gold + steep climbs + rough descent. Balance the load.",
+            10 => "Long icy valley + low timber + exit bumps. Keep output growing.",
+            11 => "Copper payload + two climbs + a rough descent. Keep the wheels planted.",
             _ => "Two jumps + a wind shaft + landing bumps. Try a low propeller."
         };
     }

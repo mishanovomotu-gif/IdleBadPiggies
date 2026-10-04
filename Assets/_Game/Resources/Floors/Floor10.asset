@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 223783cf7db324bf182dc216037184a5, type: 3}
-  m_Name: Floor7
+  m_Name: Floor10
   m_EditorClassIdentifier: Assembly-CSharp::ContraptionMine.FloorData
-  trackPrefab: {fileID: 1090603342294640259, guid: c06da26a6443a4b04bed5cc100b8cc21, type: 3}
+  trackPrefab: {fileID: 6492876569960755132, guid: bdc7a797612f944ea8b9972ad2a03f82, type: 3}
   oreType: 0
-  outputGate: 0
+  outputGate: 30000
   zones:
   - kind: 0
     from: 24
@@ -24,12 +24,12 @@ MonoBehaviour:
     from: 39
     to: 68
     strength: 3.65
-  number: 7
+  number: 10
   requiredOre: 20
-  unlockPrice: 23000
-  distance: 120
-  multiplier: 18
-  challenge: FROST TUNNEL
+  unlockPrice: 4000000
+  distance: 130
+  multiplier: 600
+  challenge: GLACIER WORKS
   terrain:
   - {x: -8, y: 0}
   - {x: 18, y: 0}
@@ -37,11 +37,11 @@ MonoBehaviour:
   - {x: 40, y: 0.2}
   - {x: 57, y: 0.2}
   - {x: 69, y: 0.3}
-  - {x: 79, y: 1}
-  - {x: 88, y: 0.2}
-  - {x: 98, y: 0.8}
-  - {x: 108, y: 0}
-  - {x: 145, y: 0}
+  - {x: 80, y: 1.1}
+  - {x: 90, y: 0.2}
+  - {x: 102, y: 0.8}
+  - {x: 115, y: 0}
+  - {x: 155, y: 0}
   gapAfter: -1
   extraGaps: 
   rockTint: {r: 0.25, g: 0.25, b: 0.48, a: 1}

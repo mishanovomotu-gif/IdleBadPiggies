@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ContraptionMine.FloorData
   trackPrefab: {fileID: 5350810805945785317, guid: b0cc76b08b8fd43e0bb874238cb2d617, type: 3}
   oreType: 1
+  outputGate: 0
   zones:
   - kind: 0
     from: 50

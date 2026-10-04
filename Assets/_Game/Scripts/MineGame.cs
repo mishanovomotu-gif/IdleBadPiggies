@@ -13,14 +13,14 @@ namespace ContraptionMine
         static Material rockMaterial; static Sprite cavernSprite;
         MineState state; Canvas canvas; RectTransform designRoot; Camera cam; Transform track; VehiclePhysics vehicle; SpriteRenderer cavern;
         TMP_Text wallet, hud, telemetry, notice; readonly List<GameObject> dynamicUI = new();
-        PartType selected = PartType.Frame; bool delete, moving, debug, running, suspended, showResults; int moveX = -1, moveY = -1; float elapsed, stalled, flipped, saveClock, progress; double pendingOffline; string message = "Choose a part, then tap a grid cell. Try the starter blueprint."; int Active => state.selectedFloor; FloorState Current => state.floors[Active]; FloorData Floor => floors[Active];
+        PartType selected = PartType.Frame; bool delete, moving, debug, running, suspended, showResults; int moveX = -1, moveY = -1; float elapsed, stalled, flipped, saveClock, progress, nextUIUpdate; double pendingOffline; string message = "Choose a part, then tap a grid cell. Try the starter blueprint."; int Active => state.selectedFloor; FloorState Current => state.floors[Active]; FloorData Floor => floors[Active];
         static readonly Color Navy = new(.025f, .08f, .15f), Panel = new(.04f, .17f, .28f), Blue = new(.02f, .38f, .65f), Gold = new(1, .73f, .2f), Green = new(.1f, .65f, .36f);
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)] static void Bootstrap() { if (FindFirstObjectByType<MineGame>() != null) return; var o = new GameObject("Contraption Mine"); o.AddComponent<MineGame>(); }
         void Start()
         {
             parts = Resources.LoadAll<PartData>("Parts"); Array.Sort(parts, (a, b) => a.type.CompareTo(b.type)); floors = Resources.LoadAll<FloorData>("Floors"); Array.Sort(floors, (a, b) => a.number.CompareTo(b.number)); if (parts.Length != Enum.GetValues(typeof(PartType)).Length || floors.Length < 1) { Debug.LogError("Missing mine data. Run Tools > Contraption Mine > Setup Prototype."); enabled = false; return; }
-            state = SaveManager.Load(); state.EnsurePartCount(parts.Length); state.EnsureFloorCount(floors.Length); state.selectedFloor = Mathf.Clamp(state.selectedFloor, 0, floors.Length - 1); floorPage = state.selectedFloor / 3; state.floors[0].unlocked = true; for (int i = 0; i < floors.Length; i++) state.floors[i].design ??= floors[i].blueprint.Copy(); if (!Current.unlocked) state.selectedFloor = 0; floorPage = state.selectedFloor / 3; GrantDeepMineParts();
-            pendingOffline = state.uncollectedOffline + SaveManager.Offline(state, DateTimeOffset.UtcNow.ToUnixTimeSeconds()); Save();
+            state = SaveManager.Load(); state.EnsurePartCount(parts.Length); state.EnsureFloorCount(floors.Length); state.selectedFloor = Mathf.Clamp(state.selectedFloor, 0, floors.Length - 1); floorPage = state.selectedFloor / 3; state.floors[0].unlocked = true; for (int i = 0; i < floors.Length; i++) state.floors[i].design ??= floors[i].blueprint.Copy(); if (!Current.unlocked) state.selectedFloor = 0; floorPage = state.selectedFloor / 3; GrantDeepMineParts(); state.EnsureEconomy(floors);
+            pendingOffline = state.uncollectedOffline + state.ApplyOffline(DateTimeOffset.UtcNow.ToUnixTimeSeconds()); Save();
             Screen.orientation = ScreenOrientation.Portrait; Application.targetFrameRate = 60; Time.fixedDeltaTime = .02f;
             foreach (var c in FindObjectsByType<Camera>(FindObjectsSortMode.None)) c.gameObject.SetActive(false);
             cam = new GameObject("Mine camera").AddComponent<Camera>(); cam.orthographic = true; cam.orthographicSize = 4.8f; cam.rect = new Rect(0, .455f, 1, .25f); cam.backgroundColor = new Color(.10f, .12f, .27f); cam.transform.position = new Vector3(5, 1.6f, -10);
@@ -28,7 +28,7 @@ namespace ContraptionMine
             designRoot = new GameObject("1080 × 1920 portrait content", typeof(RectTransform)).GetComponent<RectTransform>(); designRoot.SetParent(canvas.transform, false);
             co.AddComponent<MineViewport>().Initialize(canvas, designRoot, cam);
             if (FindFirstObjectByType<EventSystem>() == null) new GameObject("UI input", typeof(EventSystem), typeof(InputSystemUIInputModule));
-            BuildInterface();
+            message = ""; BuildInterface();
             BuildTrack(); Refresh();
         }
         string PartLabel(PartType t) => t switch { PartType.Frame => "FRAME", PartType.Wheel => "WHEEL", PartType.Engine => "ENGINE", PartType.Cargo => "ORE", PartType.Spring => "SPRING", PartType.Balloon => "LIFT", PartType.HeavyWheel => "HEAVY", _ => "POWER" };
@@ -53,8 +53,8 @@ namespace ContraptionMine
         void GrantDeepMineParts() { if (state.floors.Length > 3 && state.floors[3].unlocked) { state.partsUnlocked[(int)PartType.PowerfulEngine] = true; state.partsUnlocked[(int)PartType.HeavyWheel] = true; } if (state.floors.Length > 6 && state.floors[6].unlocked) { state.partsUnlocked[(int)PartType.Propeller] = true; state.partsUnlocked[(int)PartType.Ballast] = true; } }
         void SelectFloor(int i)
         {
-            if (running) return; if (!state.floors[i].unlocked) { if (i == 0) return; if (state.floors[i - 1].automated == null) { message = $"Automate Floor {i} first."; Refresh(); return; } if (state.coins < floors[i].unlockPrice) { message = $"Need {floors[i].unlockPrice:N0} coins to unlock Floor {i + 1}."; Refresh(); return; } state.coins -= floors[i].unlockPrice; state.floors[i].unlocked = true; GrantDeepMineParts(); }
-            GrantDeepMineParts(); showResults = false; state.selectedFloor = i; floorPage = i / 3; message = $"Floor {i + 1}: {Floor.challenge}. Deliver {Floor.requiredOre} {Floor.OreName} to automate."; Save(); BuildTrack(); Refresh();
+            if (running) return; if (!state.floors[i].unlocked) { if (i == 0) return; if (state.floors[i - 1].automated == null) { message = $"Start production on Floor {i} first."; Refresh(); return; } if (state.coins < floors[i].unlockPrice) { message = $"Need {floors[i].unlockPrice:N0} coins to unlock Floor {i + 1}."; Refresh(); return; } if (state.Income < floors[i].outputGate) { message = $"Raise mine output to {Money(floors[i].outputGate)}/min first. Upgrade crews and loading."; Refresh(); return; } state.coins -= floors[i].unlockPrice; state.floors[i].unlocked = true; GrantDeepMineParts(); }
+            GrantDeepMineParts(); showResults = false; state.selectedFloor = i; floorPage = i / 3; message = $"Floor {i + 1}: {Floor.challenge}. Deliver {Floor.requiredOre} {Floor.OreName} to start production."; Save(); BuildTrack(); Refresh();
         }
         void BuildTrack()
         {
@@ -88,39 +88,46 @@ namespace ContraptionMine
             if (running) return; if (vehicle != null) vehicle.Dispose(); cam.transform.position = new Vector3(5, 1.6f, -10); if (cavern != null) cavern.transform.position = new Vector3(5, 1.6f, 4); progress = 0; // Preview shares the exact construction used by the test.
             if (Current.design.parts.Count > 0) { vehicle = VehiclePhysics.Spawn(Current.design, parts, state.levels, new Vector2(5, .65f), Floor); vehicle.body.simulated = false; foreach (var rb in FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None)) rb.simulated = false; }
         }
-        void StartRun() { string invalid = Validate(); if (invalid != null) { message = invalid; Refresh(); return; } if (vehicle != null) vehicle.Dispose(); vehicle = VehiclePhysics.Spawn(Current.design, parts, state.levels, new Vector2(5, 2), Floor); showResults = false; running = true; elapsed = stalled = flipped = 0; progress = 0; message = MineChallenges.Brief(Floor); Refresh(); }
+        void StartRun() { string invalid = Validate(); if (invalid != null) { message = invalid; Refresh(); return; } if (vehicle != null) vehicle.Dispose(); vehicle = VehiclePhysics.Spawn(Current.design, parts, state.levels, new Vector2(5, 2), Floor); showResults = false; screen = MineScreen.Workshop; running = true; elapsed = stalled = flipped = 0; progress = 0; message = "Hauler test in progress. STOP / MODIFY returns to editing."; Refresh(); }
+        void FixedUpdate()
+        {
+            if (!running || vehicle == null) return;
+            elapsed += Time.fixedDeltaTime;
+            stalled = elapsed > 2 && vehicle.body.linearVelocity.magnitude < .35f ? stalled + Time.fixedDeltaTime : 0;
+            flipped = Mathf.Abs(Mathf.DeltaAngle(vehicle.body.rotation, 0)) > 110 ? flipped + Time.fixedDeltaTime : 0;
+        }
         void Update()
         {
-            if (state == null || wallet == null) return; if (!suspended) state.coins += state.Income / 60 * Time.unscaledDeltaTime; wallet.text = $"<size=42><color=#FFF2AA>{state.coins:N0}</color></size> <size=21>COINS</size>\n<size=30><color=#AAFF71>+{state.Income:0}/min</color></size>";
+            if (state == null || wallet == null) return; if (!suspended) state.Tick(Time.unscaledDeltaTime); wallet.text = $"<size=42><color=#FFF2AA>{Money(state.coins)}</color></size> <size=21>COINS</size>\n<size=30><color=#AAFF71>+{Money(state.CashIncome)}/min AUTO</color></size>";
             if (running && vehicle != null)
             {
-                elapsed += Time.deltaTime; progress = Mathf.Clamp(vehicle.body.position.x - 5, 0, Floor.distance); var target = new Vector3(vehicle.body.position.x + 3, Mathf.Max(1.6f, vehicle.body.position.y + .8f), -10); cam.transform.position = Vector3.Lerp(cam.transform.position, target, Time.deltaTime * 6); if (cavern != null) cavern.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 4); float speed = vehicle.body.linearVelocity.magnitude; stalled = elapsed > 2 && speed < .35f ? stalled + Time.deltaTime : 0;
-                flipped = Mathf.Abs(Mathf.DeltaAngle(vehicle.body.rotation, 0)) > 110 ? flipped + Time.deltaTime : 0;
+                progress = Mathf.Clamp(vehicle.body.position.x - 5, 0, Floor.distance); var target = new Vector3(vehicle.body.position.x + 3, Mathf.Max(1.6f, vehicle.body.position.y + .8f), -10); cam.transform.position = Vector3.Lerp(cam.transform.position, target, Time.deltaTime * 6); if (cavern != null) cavern.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 4); 
                 if (progress >= Floor.distance) EndRun(true, "Delivery complete!"); else if (vehicle.body.position.y < -6) EndRun(false, "Fell into the mine. Try lift or a wider wheelbase."); else if (vehicle.broken) EndRun(false, "A wheel disconnected."); else if (flipped >= 3) EndRun(false, "Flipped and could not recover. Try a lower centre of mass."); else if (stalled >= 3) EndRun(false, "Stalled for 3 seconds. Try less cargo or more power."); else if (elapsed >= 30) EndRun(false, "Time limit reached (30 seconds). Improve your hauler.");
             }
-            hud.text = $"FLOOR {Active + 1}     {progress:0} / {Floor.distance:0} m     {(running ? elapsed.ToString("0.0") + "s" : "WORKSHOP")}";
-            telemetry.text = vehicle != null ? $"{Floor.OreName} {vehicle.cargo} / need {Floor.requiredOre}  ·  Mass {vehicle.totalMass:0.0}  ·  Ore mass {vehicle.cargoMass:0.0}\nPower {vehicle.enginePower:0}  ·  Speed {vehicle.body.linearVelocity.magnitude:0.0} m/s  ·  Current {Current.automated?.rate ?? 0:0}/min" : $"Deliver {Floor.requiredOre} {Floor.OreName} to automate. Current {Current.automated?.rate ?? 0:0}/min";
-            saveClock += Time.unscaledDeltaTime; if (saveClock > 10) { saveClock = 0; Save(); }
+            if (hud != null) hud.text = $"FLOOR {Active + 1}     {progress:0} / {Floor.distance:0} m     {(running ? elapsed.ToString("0.0") + "s" : "WORKSHOP")}";
+            if (telemetry != null) telemetry.text = vehicle != null ? $"{Floor.OreName} {vehicle.cargo} / need {Floor.requiredOre}  ·  Mass {vehicle.totalMass:0.0}  ·  Ore mass {vehicle.cargoMass:0.0}\nPower {vehicle.enginePower:0}  ·  Speed {vehicle.body.linearVelocity.magnitude:0.0} m/s  ·  Current {Current.automated?.rate ?? 0:0}/min" : $"Deliver {Floor.requiredOre} {Floor.OreName} to start production. Current {Current.automated?.rate ?? 0:0}/min";
+            if (Time.unscaledTime >= nextUIUpdate) { nextUIUpdate = Time.unscaledTime + .15f; foreach (var update in liveUI) update(); }
+            if (!suspended) saveClock += Time.unscaledDeltaTime; if (saveClock > 10) { saveClock = 0; Save(); }
         }
         void EndRun(bool success, string reason)
         {
             if (!running) return; running = false; Time.timeScale = 1; if (vehicle != null) { vehicle.body.simulated = false; foreach (var rb in FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None)) rb.simulated = false; }
-            if (success) { float rate = vehicle.cargo / Mathf.Max(elapsed, .1f) * 60 * Floor.multiplier * Floor.OreValue; bool best = rate > Current.best; Current.lastSuccess = new RunRecord { vehicle = Current.design.Copy(), ore = vehicle.cargo, seconds = elapsed, rate = rate }; Current.best = Mathf.Max(Current.best, rate); message = $"{(best ? "NEW BEST!" : "SUCCESS!")} {vehicle.cargo} ore · {elapsed:0.0}s · {rate:0}/min. " + (vehicle.cargo >= Floor.requiredOre ? "AUTOMATE to record this vehicle." : $"Need {Floor.requiredOre} ore to automate; add cargo."); } else message = "TEST FAILED — " + reason;
+            if (success) { float rate = vehicle.cargo / Mathf.Max(elapsed, .1f) * 60 * Floor.multiplier * Floor.OreValue; bool best = rate > Current.best; Current.lastSuccess = new RunRecord { vehicle = Current.design.Copy(), ore = vehicle.cargo, seconds = elapsed, rate = rate }; Current.best = Mathf.Max(Current.best, rate); message = $"{(best ? "NEW BEST!" : "SUCCESS!")} {vehicle.cargo} ore · {elapsed:0.0}s · {rate:0}/min. " + (vehicle.cargo >= Floor.requiredOre ? (Current.automated == null ? "START PRODUCTION to use this hauler." : "REPLACE RECORD to use this hauler.") : $"Need {Floor.requiredOre} ore to automate; add cargo."); } else message = "TEST FAILED — " + reason;
             Current.lastAttempt = new RunAttempt { success = success, reason = success ? (vehicle.cargo >= Floor.requiredOre ? "DELIVERY COMPLETE" : "DELIVERED — MORE ORE NEEDED") : reason, hint = RunHint(success, reason), ore = vehicle.cargo, seconds = elapsed, distance = progress, rate = success ? Current.lastSuccess.rate : 0, airSeconds = vehicle.airSeconds, impact = vehicle.peakImpact };
             showResults = true; Save(); Refresh();
         }
-        void Automate() { var r = Current.lastSuccess; if (r == null || r.ore < Floor.requiredOre) return; Current.automated = JsonUtility.FromJson<RunRecord>(JsonUtility.ToJson(r)); message = $"Floor {Active + 1} automated at {r.rate:0} coins/min. Editing or upgrading leaves this recorded income intact."; Save(); Refresh(); }
-        void OfflinePanel() { Box("Offline", 115, 655, 850, 340, Navy, true); Label("YOUR PIGGIES WERE BUSY!", 155, 690, 770, 70, 36, Gold, true); Label($"+{pendingOffline:N0} coins · up to 8 hours", 155, 770, 770, 55, 30, Color.white, true); Button("COLLECT", 155, 855, 770, 90, () => { state.coins += pendingOffline; pendingOffline = 0; Save(); Refresh(); }, Green, 34, true); }
+        void Automate() { if (!Current.unlocked || running) return; var r = Current.lastSuccess; if (r == null || r.ore < Floor.requiredOre) return; Current.automated = JsonUtility.FromJson<RunRecord>(JsonUtility.ToJson(r)); message = $"Floor {Active + 1} production recorded. Hire a manager to collect automatically."; Save(); Refresh(); }
+        void OfflinePanel() { ModalBackdrop(); Box("Offline", 115, 655, 850, 340, Navy, true); Label("YOUR PIGGIES WERE BUSY!", 155, 690, 770, 70, 36, Gold, true); Label($"+{pendingOffline:N0} coins · up to {SaveManager.OfflineHours} hours", 155, 770, 770, 55, 30, Color.white, true); Button("COLLECT", 155, 855, 770, 90, () => { state.Earn(pendingOffline); pendingOffline = 0; Save(); Refresh(); }, Green, 34, true); }
         void DebugPanel()
         {
-            Box("Debug tools", 65, 630, 950, 375, Navy, true); Label("DEVELOPMENT TOOLS", 90, 640, 900, 45, 29, Gold, true);
+            ModalBackdrop(); Box("Debug tools", 65, 630, 950, 375, Navy, true); Label("DEVELOPMENT TOOLS", 90, 640, 900, 45, 29, Gold, true);
             Button("+1000 COINS", 90, 700, 430, 65, () => { state.coins += 1000; Save(); }, Blue, 24, true); Button("UNLOCK NEXT FLOOR", 540, 700, 450, 65, () => { for (int i = 1; i < floors.Length; i++) if (!state.floors[i].unlocked) { state.floors[i].unlocked = true; break; } Save(); Refresh(); }, Blue, 24, true);
-            Button("ALL PARTS", 90, 780, 275, 65, () => { for (int i = 0; i < parts.Length; i++) state.partsUnlocked[i] = true; Save(); Refresh(); }, Blue, 23, true); Button("COMPLETE TEST", 380, 780, 310, 65, () => { if (running) { elapsed = Mathf.Max(elapsed, 10); EndRun(true, "Debug completion"); } }, Blue, 23, true); Button("RESET SAVE", 705, 780, 285, 65, () => { if (running) EndRun(false, "Save reset"); SaveManager.Reset(); state = new MineState(); state.EnsureFloorCount(floors.Length); floorPage = 0; state.floors[0].unlocked = true; for (int i = 0; i < floors.Length; i++) state.floors[i].design = floors[i].blueprint.Copy(); pendingOffline = 0; Save(); BuildTrack(); Refresh(); }, new Color(.65f, .15f, .2f), 23, true);
+            Button("ALL PARTS", 90, 780, 275, 65, () => { for (int i = 0; i < parts.Length; i++) state.partsUnlocked[i] = true; Save(); Refresh(); }, Blue, 23, true); Button("COMPLETE TEST", 380, 780, 310, 65, () => { if (running) { elapsed = Mathf.Max(elapsed, 10); EndRun(true, "Debug completion"); } }, Blue, 23, true); Button("RESET SAVE", 705, 780, 285, 65, () => { if (running) EndRun(false, "Save reset"); SaveManager.Reset(); state = new MineState(); state.EnsureFloorCount(floors.Length); floorPage = 0; state.floors[0].unlocked = true; for (int i = 0; i < floors.Length; i++) state.floors[i].design = floors[i].blueprint.Copy(); pendingOffline = 0; state.EnsureEconomy(floors); Save(); BuildTrack(); Refresh(); }, new Color(.65f, .15f, .2f), 23, true);
             for (int i = 0; i < 3; i++) { float speed = i == 0 ? .5f : i == 1 ? 1 : 2; Button($"PHYSICS x{speed}", 90 + i * 305, 865, 290, 65, () => Time.timeScale = speed, Panel, 23, true); }
-            Label("Close with DEV. Debug completion bypasses route validation.", 90, 943, 890, 45, 22, Color.white, true);
+            Button("CLOSE TOOLS", 90, 943, 890, 45, () => { debug = false; Refresh(); }, Blue, 22, true);
         }
         void Save() { state.uncollectedOffline = pendingOffline; SaveManager.Save(state); }
-        void OnApplicationPause(bool pause) { if (state == null) return; if (pause) { Save(); suspended = true; } else if (suspended) { pendingOffline += SaveManager.Offline(state, DateTimeOffset.UtcNow.ToUnixTimeSeconds()); suspended = false; Save(); Refresh(); } }
+        void OnApplicationPause(bool pause) { if (state == null) return; if (pause) { Save(); suspended = true; } else if (suspended) { pendingOffline += state.ApplyOffline(DateTimeOffset.UtcNow.ToUnixTimeSeconds()); suspended = false; Save(); Refresh(); } }
         void OnApplicationQuit() { if (state != null) Save(); }
     }
     public sealed class GeneratedMesh : MonoBehaviour { public Mesh mesh; void OnDestroy() { if (mesh != null) Destroy(mesh); } }
