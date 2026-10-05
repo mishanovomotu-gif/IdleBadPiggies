@@ -12,10 +12,33 @@ public sealed class PrototypeSmoke : MonoBehaviour {
  static object Get(MineGame g,string field)=>typeof(MineGame).GetField(field,Flags).GetValue(g);
  static void Call(MineGame g,string name,params object[] args)=>typeof(MineGame).GetMethod(name,Flags).Invoke(g,args);
  IEnumerator Start(){yield return null;yield return null;Application.logMessageReceived+=OnLog;var g=FindFirstObjectByType<MineGame>();var s=(MineState)Get(g,"state");
-  Screen.SetResolution(540,960,false);s.coins=1000000000;yield return null;
+  Screen.SetResolution(540,SessionState.GetBool("ContraptionMine.SnapshotPreview",false)?1171:960,false);s.coins=1000000000;yield return null;
   if(SessionState.GetBool("ContraptionMine.SnapshotPreview",false)){
+   FindFirstObjectByType<MineViewport>().SetValidationSize(540,1171);
    s=JsonUtility.FromJson<MineState>(System.IO.File.ReadAllText("/tmp/contraption-idle-tested-state.json"));typeof(MineGame).GetField("state",Flags).SetValue(g,s);typeof(MineGame).GetField("pendingOffline",Flags).SetValue(g,0d);
-   int page=SessionState.GetInt("ContraptionMine.SnapshotScreen",0);Call(g,"SelectFloor",page==1?8:page==4?9:g.floors.Length-1);Call(g,"SetScreen",page==4?MineScreen.Mine:page==5?MineScreen.Prestige:(MineScreen)page);
+   int page=SessionState.GetInt("ContraptionMine.SnapshotScreen",0);Call(g,"SelectFloor",(page==1||page==6||page==7)?0:page==4?9:g.floors.Length-1);Call(g,"SetScreen",(page==6||page==7)?MineScreen.Workshop:page==4?MineScreen.Mine:page==5?MineScreen.Prestige:(MineScreen)page);
+   if(page==6||page==7) {
+    ((System.Collections.Generic.List<GameObject>)Get(g,"dynamicUI")).Clear();
+    Call(g,"StartRun"); yield return new WaitForSeconds(2);
+    ((System.Collections.Generic.List<GameObject>)Get(g,"dynamicUI")).Clear(); Call(g,"Refresh");
+    int dashboards=0;foreach(Transform child in (RectTransform)Get(g,"designRoot")) if(child.gameObject.activeSelf) { if(child.name=="Workshop"||child.name=="Workshop inset"||child.name=="SAVE THIS HAULER"){Fail("Workshop leaked into run view after lost UI cache");yield break;} if(child.name=="Run dashboard")dashboards++; }
+    if(dashboards!=1){Fail("Duplicate run dashboard");yield break;}
+    if(page==7){typeof(MineGame).GetField("progress",Flags).SetValue(g,g.floors[s.selectedFloor].distance);typeof(MineGame).GetField("elapsed",Flags).SetValue(g,12f);Call(g,"EndRun",true,"UI result fixture."); ((System.Collections.Generic.List<GameObject>)Get(g,"dynamicUI")).Clear();Call(g,"Refresh");int results=0;foreach(Transform child in (RectTransform)Get(g,"designRoot"))if(child.gameObject.activeSelf){if(child.name=="Workshop"||child.name=="STOP & EDIT"){Fail("Old controls leaked into result view");yield break;}if(child.name=="Test result")results++;}if(results!=1){Fail("Duplicate result panel");yield break;}}
+    Debug.Log("UI HIERARCHY CLEANUP PASSED: "+page);
+   }
+   if(page==1) {
+    var content=(RectTransform)Get(g,"designRoot");var header=content.Find("Persistent header");
+    while(header.childCount>0)header.GetChild(0).SetParent(content,false);Destroy(header.gameObject);yield return null;
+    Call(g,"Refresh");if(content.Find("Persistent header")==null||((TMPro.TMP_Text)Get(g,"wallet")).transform.parent!=content.Find("Persistent header")){Fail("Legacy header migration failed");yield break;}
+    Debug.Log("LEGACY UI HEADER MIGRATION PASSED");
+    var beforeDrag=s.floors[s.selectedFloor].design.Copy();float extra=content.sizeDelta.y-1920;
+    Vector2 TallPoint(float x,float y)=>RectTransformUtility.WorldToScreenPoint(null,content.TransformPoint(new Vector3(x-540,content.sizeDelta.y*.5f-y-(y>=900?extra:0),0)));
+    var handleObject=new GameObject("Tall drag check",typeof(RectTransform));Call(g,"WireDrag",handleObject,PartType.Frame,-1,-1,true);var handle=handleObject.GetComponent<WorkshopDrag>();
+    var e=new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current){pointerId=-1,position=TallPoint(40,1640)};handle.OnBeginDrag(e);e.position=TallPoint(846,1219);handle.OnDrag(e);handle.OnEndDrag(e);
+    if(!s.floors[s.selectedFloor].design.parts.Exists(p=>p.x==7&&p.y==4)){Fail("Tall portrait drag coordinates failed");yield break;}Destroy(handleObject);
+    handleObject=new GameObject("Tall side deletion check",typeof(RectTransform));Call(g,"WireDrag",handleObject,PartType.Frame,7,4,true);handle=handleObject.GetComponent<WorkshopDrag>();e.position=TallPoint(846,1219);handle.OnBeginDrag(e);e.position=TallPoint(950,1350);handle.OnDrag(e);handle.OnEndDrag(e);
+    if(s.floors[s.selectedFloor].design.parts.Exists(p=>p.x==7&&p.y==4)){Fail("Tall portrait side deletion failed");yield break;}Destroy(handleObject);s.floors[s.selectedFloor].design=beforeDrag;Call(g,"Refresh");Call(g,"Preview");Debug.Log("TALL PORTRAIT DRAG PASSED");
+   }
    if(page==4){typeof(MineGame).GetField("floorDetails",Flags).SetValue(g,true);Call(g,"Refresh");}
    if(page==5){typeof(MineGame).GetField("prestigeConfirm",Flags).SetValue(g,true);Call(g,"Refresh");}
    yield return null;WarmWorld(g);yield return null;yield return null;Capture(g,"/tmp/contraption-idle-screen-"+page+".png");Debug.Log("IDLE UI PREVIEW PASSED: "+page);EditorApplication.Exit(0);yield break;
@@ -24,6 +47,23 @@ public sealed class PrototypeSmoke : MonoBehaviour {
    for(int i=0;i<g.floors.Length;i++){s.floors[i].unlocked=true;float seconds=20;var record=new RunRecord{vehicle=g.floors[i].blueprint.Copy(),ore=g.floors[i].requiredOre,seconds=seconds,rate=g.floors[i].requiredOre/seconds*60*g.floors[i].multiplier*g.floors[i].OreValue};s.floors[i].automated=record;s.floors[i].lastSuccess=record;s.floors[i].best=record.rate;}
    Call(g,"SelectFloor",0);yield return null;WarmWorld(g);yield return null;yield return null;Capture(g);Debug.Log("CONTRAPTION MINE PREVIEW PASSED");EditorApplication.Exit(0);yield break;
   }
+  Call(g,"SetScreen",MineScreen.Workshop); yield return null;
+  var originalBuild=s.floors[0].design.Copy(); var root=(RectTransform)Get(g,"designRoot");
+  var testTarget=new GameObject("Drag integration check",typeof(RectTransform));
+  Call(g,"WireDrag",testTarget,PartType.Frame,-1,-1,true); var drag=testTarget.GetComponent<WorkshopDrag>();
+  Vector2 Point(float x,float y)=>RectTransformUtility.WorldToScreenPoint(null,root.TransformPoint(new Vector3(x-540,960-y,0)));
+  var pointer=new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current){pointerId=-1,position=Point(40,1640)};
+  drag.OnBeginDrag(pointer); pointer.position=Point(188+7*88+42,1177+42);drag.OnDrag(pointer);drag.OnEndDrag(pointer);
+  if(!s.floors[0].design.parts.Exists(p=>p.type==PartType.Frame&&p.x==7&&p.y==4)){Fail("Palette drag failed");yield break;}
+  Call(g,"RestoreBuild",false);if(JsonUtility.ToJson(s.floors[0].design)!=JsonUtility.ToJson(originalBuild)){Fail("Undo failed");yield break;}
+  Call(g,"RestoreBuild",true);if(!s.floors[0].design.parts.Exists(p=>p.x==7&&p.y==4)){Fail("Redo failed");yield break;}
+  Destroy(testTarget);testTarget=new GameObject("Move integration check",typeof(RectTransform));Call(g,"WireDrag",testTarget,PartType.Frame,7,4,true);drag=testTarget.GetComponent<WorkshopDrag>();
+  pointer.position=Point(846,1219);drag.OnBeginDrag(pointer);pointer.position=Point(758,1219);drag.OnDrag(pointer);drag.OnEndDrag(pointer);
+  if(!s.floors[0].design.parts.Exists(p=>p.x==6&&p.y==4)||s.floors[0].design.parts.Exists(p=>p.x==7&&p.y==4)){Fail("Grid move failed");yield break;}
+  Destroy(testTarget);testTarget=new GameObject("Remove integration check",typeof(RectTransform));Call(g,"WireDrag",testTarget,PartType.Frame,6,4,true);drag=testTarget.GetComponent<WorkshopDrag>();
+  pointer.position=Point(758,1219);drag.OnBeginDrag(pointer);pointer.position=Point(950,1350);drag.OnDrag(pointer);drag.OnEndDrag(pointer);
+  if(s.floors[0].design.parts.Exists(p=>p.x==6&&p.y==4)){Fail("Side deletion failed");yield break;}
+  Destroy(testTarget);s.floors[0].design=originalBuild;Call(g,"BuildTrack");Call(g,"Refresh");Debug.Log("WORKSHOP DRAG PASSED: palette, snap, move, side deletion, undo, redo");
   for(int floor=0;floor<g.floors.Length;floor++){
    if(floor>=9){
     double gateCoins=s.coins;int selected=s.selectedFloor;
@@ -71,13 +111,13 @@ public sealed class PrototypeSmoke : MonoBehaviour {
   Debug.Log("IDLE PROGRESSION PASSED: deep floor gates and upgrades via game actions");Debug.Log("CONTRAPTION MINE RUNTIME SMOKE PASSED");EditorApplication.Exit(0);
  }
  static double stateIncome(MineState state)=>state.Income;
- static void WarmWorld(MineGame game){var camera=(Camera)Get(game,"cam");var texture=new RenderTexture(540,960,24);texture.Create();camera.targetTexture=texture;camera.Render();camera.targetTexture=null;texture.Release();Destroy(texture);}
+ static void WarmWorld(MineGame game){var camera=(Camera)Get(game,"cam");var texture=new RenderTexture(540,Mathf.RoundToInt(((RectTransform)Get(game,"designRoot")).sizeDelta.y*.5f),24);texture.Create();camera.targetTexture=texture;camera.Render();camera.targetTexture=null;texture.Release();Destroy(texture);}
  static void Capture(MineGame game,string path="/tmp/contraption-preview.png"){
-  var world=(Camera)Get(game,"cam");world.rect=new Rect(0,.455f,1,.25f);var root=(RectTransform)Get(game,"designRoot");root.anchoredPosition=Vector2.zero;FindFirstObjectByType<MineViewport>().enabled=false;var canvas=FindFirstObjectByType<Canvas>();var rt=new RenderTexture(540,960,24);rt.Create();RenderTexture.active=rt;GL.Clear(true,true,new Color(.025f,.08f,.15f));world.targetTexture=rt;world.Render();RenderTexture.active=rt;var worldShot=new Texture2D(540,960,TextureFormat.RGBA32,false);worldShot.ReadPixels(new Rect(0,0,540,960),0,0);worldShot.Apply();var worldPixels=worldShot.GetPixels();
+  var world=(Camera)Get(game,"cam");var root=(RectTransform)Get(game,"designRoot");int captureHeight=Mathf.RoundToInt(root.sizeDelta.y*.5f);root.anchoredPosition=Vector2.zero;FindFirstObjectByType<MineViewport>().enabled=false;var canvas=FindFirstObjectByType<Canvas>();var rt=new RenderTexture(540,captureHeight,24);rt.Create();RenderTexture.active=rt;GL.Clear(true,true,new Color(.025f,.08f,.15f));world.targetTexture=rt;world.Render();RenderTexture.active=rt;var worldShot=new Texture2D(540,captureHeight,TextureFormat.RGBA32,false);worldShot.ReadPixels(new Rect(0,0,540,captureHeight),0,0);worldShot.Apply();var worldPixels=worldShot.GetPixels();
   var ui=new GameObject("UI capture").AddComponent<Camera>();ui.transform.position=new Vector3(0,0,-100);ui.orthographic=true;ui.clearFlags=CameraClearFlags.SolidColor;ui.backgroundColor=Color.clear;ui.cullingMask=1<<5;ui.targetTexture=rt;
   foreach(var tr in canvas.GetComponentsInChildren<Transform>(true))tr.gameObject.layer=5;
   var scaler=canvas.GetComponent<UnityEngine.UI.CanvasScaler>();scaler.enabled=false;canvas.scaleFactor=.5f;canvas.renderMode=RenderMode.ScreenSpaceCamera;canvas.worldCamera=ui;canvas.planeDistance=1;Canvas.ForceUpdateCanvases();foreach(var graphic in canvas.GetComponentsInChildren<UnityEngine.UI.Graphic>())graphic.SetAllDirty();foreach(var label in canvas.GetComponentsInChildren<TMPro.TMP_Text>())label.ForceMeshUpdate(true);Canvas.ForceUpdateCanvases();ui.Render();
-  RenderTexture.active=rt;var shot=new Texture2D(540,960,TextureFormat.RGBA32,false);shot.ReadPixels(new Rect(0,0,540,960),0,0);shot.Apply();var pixels=shot.GetPixels();for(int i=0;i<pixels.Length;i++)pixels[i]=Color.Lerp(worldPixels[i],pixels[i],pixels[i].a);shot.SetPixels(pixels);shot.Apply();Destroy(worldShot);System.IO.File.WriteAllBytes(path,shot.EncodeToPNG());RenderTexture.active=null;world.targetTexture=null;canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.worldCamera=null;scaler.enabled=true;Destroy(ui.gameObject);rt.Release();Destroy(rt);Destroy(shot);
+  RenderTexture.active=rt;var shot=new Texture2D(540,captureHeight,TextureFormat.RGBA32,false);shot.ReadPixels(new Rect(0,0,540,captureHeight),0,0);shot.Apply();var pixels=shot.GetPixels();for(int i=0;i<pixels.Length;i++)pixels[i]=Color.Lerp(worldPixels[i],pixels[i],pixels[i].a);shot.SetPixels(pixels);shot.Apply();Destroy(worldShot);System.IO.File.WriteAllBytes(path,shot.EncodeToPNG());RenderTexture.active=null;world.targetTexture=null;canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.worldCamera=null;scaler.enabled=true;Destroy(ui.gameObject);rt.Release();Destroy(rt);Destroy(shot);
  }
  void OnLog(string condition,string trace,LogType type){if(type==LogType.Exception||type==LogType.Error)Fail(condition);}
  void Fail(string reason){Application.logMessageReceived-=OnLog;var rig=FindFirstObjectByType<VehiclePhysics>();if(rig!=null)Debug.Log($"FAILED RIG: x={rig.body.position.x:0.0}, y={rig.body.position.y:0.0}, angle={rig.body.rotation:0.0}, mass={rig.totalMass:0.0}");Debug.LogError("SMOKE FAILED: "+reason);EditorApplication.Exit(1);}

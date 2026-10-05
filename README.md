@@ -1,6 +1,6 @@
 # Contraption Mine
 
-Unity 6.3 LTS / Universal 2D prototype with twelve floors, ten contraption parts, three ore types, and an idle mine economy. Open `Assets/_Game/Scenes/Mine.unity` and press Play. The portrait UI fits the screen safe area.
+Unity 6.3 LTS / Universal 2D prototype with twelve floors, ten contraption parts, three ore types, and an idle mine economy. Open `Assets/_Game/Scenes/Mine.unity` and press Play. The portrait UI fills the screen safe area. Taller screens add course space while keeping text and part icons in proportion; the bottom controls stay anchored above navigation.
 
 ## Four views
 
@@ -25,7 +25,9 @@ A new successful run changes production only when explicitly recorded. Failed te
 
 ## Contraption building
 
-Pick a part, then tap a grid square. Tapping the same part removes it. **Move** selects a part and an empty destination; **Delete** removes cells. Body parts connect edge to edge; each wheel touches a body part. Use exactly one engine, at least one frame, wheel, and cargo bin. **Blueprint** restores the starter design; **Reset** empties only the workshop.
+Drag a part from the tray onto a grid square. Drag a placed part to move it, or drop it to either side of the grid (the right side has a red delete zone) to remove it. Returning it to the tray also removes it. Drops elsewhere cancel. Occupied cells can be replaced; stock and the one-engine rule still apply. **Undo/Redo** restore edits. Green snap previews indicate an adjacent body connection; amber previews need a connection, and red previews indicate an invalid drop. Disconnected cells are highlighted. Tap a part to inspect it and see its upgrade price. Body parts connect edge to edge; each wheel touches a body part. Use exactly one engine, at least one frame, wheel, and cargo bin. Tests open a larger course view with speed-dependent camera framing, wheel suspension, exhaust, cargo and driver motion, landing dust, and basic generated sound (toggle in Menu). Results compare base output with the saved hauler and provide edit/retry controls.
+
+**Blueprint** restores the starter design; **Reset** empties only the workshop.
 
 The chassis has a compound rigid body with jointed wheels, explicit mass distribution, softer spring suspension, placed balloon lift, and placed propeller thrust. Moving lift/thrust changes pitch. Low ballast lowers the centre of mass at a weight cost. Cargo is secured; there is no random ore loss. Decorative beams, ropes, and suspension arms make connections visible.
 

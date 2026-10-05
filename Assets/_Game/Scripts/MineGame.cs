@@ -16,6 +16,7 @@ namespace ContraptionMine
         PartType selected = PartType.Frame; bool delete, moving, debug, running, suspended, showResults; int moveX = -1, moveY = -1; float elapsed, stalled, flipped, saveClock, progress, nextUIUpdate; double pendingOffline; string message = "Choose a part, then tap a grid cell. Try the starter blueprint."; int Active => state.selectedFloor; FloorState Current => state.floors[Active]; FloorData Floor => floors[Active];
         static readonly Color Navy = new(.025f, .08f, .15f), Panel = new(.04f, .17f, .28f), Blue = new(.02f, .38f, .65f), Gold = new(1, .73f, .2f), Green = new(.1f, .65f, .36f);
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)] static void Bootstrap() { if (FindFirstObjectByType<MineGame>() != null) return; var o = new GameObject("Contraption Mine"); o.AddComponent<MineGame>(); }
+        void OnEnable() { if (state != null && canvas != null && designRoot != null) Refresh(); }
         void Start()
         {
             parts = Resources.LoadAll<PartData>("Parts"); Array.Sort(parts, (a, b) => a.type.CompareTo(b.type)); floors = Resources.LoadAll<FloorData>("Floors"); Array.Sort(floors, (a, b) => a.number.CompareTo(b.number)); if (parts.Length != Enum.GetValues(typeof(PartType)).Length || floors.Length < 1) { Debug.LogError("Missing mine data. Run Tools > Contraption Mine > Setup Prototype."); enabled = false; return; }
@@ -23,22 +24,23 @@ namespace ContraptionMine
             pendingOffline = state.uncollectedOffline + state.ApplyOffline(DateTimeOffset.UtcNow.ToUnixTimeSeconds()); Save();
             Screen.orientation = ScreenOrientation.Portrait; Application.targetFrameRate = 60; Time.fixedDeltaTime = .02f;
             foreach (var c in FindObjectsByType<Camera>(FindObjectsSortMode.None)) c.gameObject.SetActive(false);
-            cam = new GameObject("Mine camera").AddComponent<Camera>(); cam.orthographic = true; cam.orthographicSize = 4.8f; cam.rect = new Rect(0, .455f, 1, .25f); cam.backgroundColor = new Color(.10f, .12f, .27f); cam.transform.position = new Vector3(5, 1.6f, -10);
-            var co = new GameObject("Portrait UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster)); canvas = co.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; var scale = co.GetComponent<CanvasScaler>(); scale.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; scale.referenceResolution = new Vector2(1080, 1920); scale.matchWidthOrHeight = .5f;
+            cam = new GameObject("Mine camera").AddComponent<Camera>(); cam.gameObject.AddComponent<AudioListener>(); cam.orthographic = true; cam.orthographicSize = 4.8f; cam.rect = new Rect(0, .455f, 1, .25f); cam.backgroundColor = new Color(.10f, .12f, .27f); cam.transform.position = new Vector3(5, 1.6f, -10);
+            var co = new GameObject("Portrait UI", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster)); canvas = co.GetComponent<Canvas>();
+            var backdropCamera = new GameObject("Full screen background").AddComponent<Camera>(); backdropCamera.depth = -100; backdropCamera.cullingMask = 0; backdropCamera.backgroundColor = Navy; backdropCamera.clearFlags = CameraClearFlags.SolidColor;
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay; var scale = co.GetComponent<CanvasScaler>(); scale.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize; scale.referenceResolution = new Vector2(1080, 1920); scale.matchWidthOrHeight = .5f;
             designRoot = new GameObject("1080 × 1920 portrait content", typeof(RectTransform)).GetComponent<RectTransform>(); designRoot.SetParent(canvas.transform, false);
             co.AddComponent<MineViewport>().Initialize(canvas, designRoot, cam);
             if (FindFirstObjectByType<EventSystem>() == null) new GameObject("UI input", typeof(EventSystem), typeof(InputSystemUIInputModule));
             message = ""; BuildInterface();
             BuildTrack(); Refresh();
         }
-        string PartLabel(PartType t) => t switch { PartType.Frame => "FRAME", PartType.Wheel => "WHEEL", PartType.Engine => "ENGINE", PartType.Cargo => "ORE", PartType.Spring => "SPRING", PartType.Balloon => "LIFT", PartType.HeavyWheel => "HEAVY", _ => "POWER" };
-        void Pick(int i) { if (!state.partsUnlocked[i]) { if (state.coins < parts[i].unlockCost) { message = "Earn more coins to unlock this part."; } else { state.coins -= parts[i].unlockCost; state.partsUnlocked[i] = true; Save(); message = parts[i].label + " unlocked."; } Refresh(); return; } selected = (PartType)i; delete = moving = false; message = $"{parts[i].label}: {Description(parts[i])} Tap a cell to place."; Refresh(); }
-        string Description(PartData p) => p.type switch { PartType.Cargo => $"{p.Capacity(state.levels[(int)p.type])} {Floor.OreName}, +{Floor.OreMass:0.00} mass each.", PartType.Balloon => "reduces effective weight with lift.", PartType.Spring => "bouncy suspension absorbs rough landings.", PartType.Propeller => "forward thrust; mount low to avoid tipping.", PartType.Ballast => $"{p.mass * (1 + .12f * (state.levels[(int)p.type] - 1)):0.0} mass; upgrades add weight. Mount low for balance.", _ => $"mass {p.mass:0.0}" };
+        void Pick(int i) { if (!state.partsUnlocked[i]) { if (state.coins < parts[i].unlockCost) { message = "Earn more coins to unlock this part."; } else { state.coins -= parts[i].unlockCost; state.partsUnlocked[i] = true; Save(); message = parts[i].label + " unlocked."; } Refresh(); return; } selected = (PartType)i; delete = moving = false; message = $"{parts[i].label}: {Description(parts[i])} Drag from the tray to place."; Refresh(); }
+        string Description(PartData p) => p.type switch { PartType.Engine or PartType.PowerfulEngine => $"power {p.Power(state.levels[(int)p.type]):0}; one engine per hauler.", PartType.Wheel or PartType.HeavyWheel => $"grip {p.grip * (1 + .1f * (state.levels[(int)p.type] - 1)):0.0}; spread wheels for balance.", PartType.Cargo => $"{p.Capacity(state.levels[(int)p.type])} {Floor.OreName}, +{Floor.OreMass:0.00} mass each.", PartType.Balloon => "reduces effective weight with lift.", PartType.Spring => "bouncy suspension absorbs rough landings.", PartType.Propeller => "forward thrust; mount low to avoid tipping.", PartType.Ballast => $"{p.mass * (1 + .12f * (state.levels[(int)p.type] - 1)):0.0} mass; upgrades add weight. Mount low for balance.", _ => $"mass {p.mass:0.0}" };
         void Cell(int x, int y)
         {
-            if (running) return; showResults = false; var list = Current.design.parts; var old = list.Find(p => p.x == x && p.y == y);
-            if (delete) { if (old != null) list.Remove(old); } else if (moving) { if (moveX < 0) { if (old == null) return; moveX = x; moveY = y; message = "Tap an empty destination cell."; Refresh(); return; } if (old != null) return; var p = list.Find(q => q.x == moveX && q.y == moveY); if (p != null) { p.x = x; p.y = y; } moveX = -1; message = "Part moved. Select another part to move."; } else { var d = parts[(int)selected]; if (old?.type == selected) { list.Remove(old); } else { if (list.FindAll(p => p.type == selected).Count >= d.stock) { message = "No more of this part available."; Refresh(); return; } if (d.IsEngine && list.Exists(p => p != old && parts[(int)p.type].IsEngine)) { message = "Use exactly one engine. Delete or move the existing engine."; Refresh(); return; } if (old != null) list.Remove(old); list.Add(new PlacedPart(selected, x, y)); } }
-            Save(); Refresh(); Preview();
+            if (running) return;
+            var part = Current.design.parts.Find(p => p.x == x && p.y == y);
+            if (part != null) { selected = part.type; message = parts[(int)selected].label + ": " + Description(parts[(int)selected]); Refresh(); }
         }
         string Validate()
         {
@@ -54,7 +56,7 @@ namespace ContraptionMine
         void SelectFloor(int i)
         {
             if (running) return; if (!state.floors[i].unlocked) { if (i == 0) return; if (state.floors[i - 1].automated == null) { message = $"Start production on Floor {i} first."; Refresh(); return; } if (state.coins < floors[i].unlockPrice) { message = $"Need {floors[i].unlockPrice:N0} coins to unlock Floor {i + 1}."; Refresh(); return; } if (state.Income < floors[i].outputGate) { message = $"Raise mine output to {Money(floors[i].outputGate)}/min first. Upgrade crews and loading."; Refresh(); return; } state.coins -= floors[i].unlockPrice; state.floors[i].unlocked = true; GrantDeepMineParts(); }
-            GrantDeepMineParts(); showResults = false; state.selectedFloor = i; floorPage = i / 3; message = $"Floor {i + 1}: {Floor.challenge}. Deliver {Floor.requiredOre} {Floor.OreName} to start production."; Save(); BuildTrack(); Refresh();
+            GrantDeepMineParts(); showResults = false; undoBuilds.Clear(); redoBuilds.Clear(); state.selectedFloor = i; floorPage = i / 3; message = $"Floor {i + 1}: {Floor.challenge}. Deliver {Floor.requiredOre} {Floor.OreName} to start production."; Save(); BuildTrack(); Refresh();
         }
         void BuildTrack()
         {
@@ -85,7 +87,7 @@ namespace ContraptionMine
         }
         void Preview()
         {
-            if (running) return; if (vehicle != null) vehicle.Dispose(); cam.transform.position = new Vector3(5, 1.6f, -10); if (cavern != null) cavern.transform.position = new Vector3(5, 1.6f, 4); progress = 0; // Preview shares the exact construction used by the test.
+            if (running) return; if (vehicle != null) vehicle.Dispose(); cam.orthographicSize = 4.8f; cam.transform.position = new Vector3(5, 1.6f, -10); if (cavern != null) cavern.transform.position = new Vector3(5, 1.6f, 4); progress = 0; // Preview shares the exact construction used by the test.
             if (Current.design.parts.Count > 0) { vehicle = VehiclePhysics.Spawn(Current.design, parts, state.levels, new Vector2(5, .65f), Floor); vehicle.body.simulated = false; foreach (var rb in FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None)) rb.simulated = false; }
         }
         void StartRun() { string invalid = Validate(); if (invalid != null) { message = invalid; Refresh(); return; } if (vehicle != null) vehicle.Dispose(); vehicle = VehiclePhysics.Spawn(Current.design, parts, state.levels, new Vector2(5, 2), Floor); showResults = false; screen = MineScreen.Workshop; running = true; elapsed = stalled = flipped = 0; progress = 0; message = "Hauler test in progress. STOP / MODIFY returns to editing."; Refresh(); }
@@ -101,10 +103,10 @@ namespace ContraptionMine
             if (state == null || wallet == null) return; if (!suspended) state.Tick(Time.unscaledDeltaTime); wallet.text = $"<size=42><color=#FFF2AA>{Money(state.coins)}</color></size> <size=21>COINS</size>\n<size=30><color=#AAFF71>+{Money(state.CashIncome)}/min AUTO</color></size>";
             if (running && vehicle != null)
             {
-                progress = Mathf.Clamp(vehicle.body.position.x - 5, 0, Floor.distance); var target = new Vector3(vehicle.body.position.x + 3, Mathf.Max(1.6f, vehicle.body.position.y + .8f), -10); cam.transform.position = Vector3.Lerp(cam.transform.position, target, Time.deltaTime * 6); if (cavern != null) cavern.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 4); 
+                progress = Mathf.Clamp(vehicle.body.position.x - 5, 0, Floor.distance); var target = new Vector3(vehicle.body.position.x + 1.7f, Mathf.Max(1.6f, vehicle.body.position.y + .8f), -10); cam.transform.position = Vector3.Lerp(cam.transform.position, target, Time.deltaTime * 6); cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, Mathf.Max(6.5f, 6.2f / cam.aspect) + Mathf.Clamp(vehicle.body.linearVelocity.magnitude * .06f, 0, 1.5f), Time.deltaTime * 2); if (cavern != null) { cavern.transform.position = new Vector3(cam.transform.position.x, cam.transform.position.y, 4); float height = Mathf.Max(14, cam.orthographicSize * 2.1f); cavern.transform.localScale = new Vector3(height * cam.aspect / cavern.sprite.bounds.size.x, height / cavern.sprite.bounds.size.y, 1); } 
                 if (progress >= Floor.distance) EndRun(true, "Delivery complete!"); else if (vehicle.body.position.y < -6) EndRun(false, "Fell into the mine. Try lift or a wider wheelbase."); else if (vehicle.broken) EndRun(false, "A wheel disconnected."); else if (flipped >= 3) EndRun(false, "Flipped and could not recover. Try a lower centre of mass."); else if (stalled >= 3) EndRun(false, "Stalled for 3 seconds. Try less cargo or more power."); else if (elapsed >= 30) EndRun(false, "Time limit reached (30 seconds). Improve your hauler.");
             }
-            if (hud != null) hud.text = $"FLOOR {Active + 1}     {progress:0} / {Floor.distance:0} m     {(running ? elapsed.ToString("0.0") + "s" : "WORKSHOP")}";
+            if (hud != null) hud.text = $"FLOOR {Active + 1}     {progress:0} / {Floor.distance:0} m     {(running ? elapsed.ToString("0.0") + "s" : showResults ? "RESULT" : "WORKSHOP")}";
             if (telemetry != null) telemetry.text = vehicle != null ? $"{Floor.OreName} {vehicle.cargo} / need {Floor.requiredOre}  ·  Mass {vehicle.totalMass:0.0}  ·  Ore mass {vehicle.cargoMass:0.0}\nPower {vehicle.enginePower:0}  ·  Speed {vehicle.body.linearVelocity.magnitude:0.0} m/s  ·  Current {Current.automated?.rate ?? 0:0}/min" : $"Deliver {Floor.requiredOre} {Floor.OreName} to start production. Current {Current.automated?.rate ?? 0:0}/min";
             if (Time.unscaledTime >= nextUIUpdate) { nextUIUpdate = Time.unscaledTime + .15f; foreach (var update in liveUI) update(); }
             if (!suspended) saveClock += Time.unscaledDeltaTime; if (saveClock > 10) { saveClock = 0; Save(); }
@@ -112,7 +114,7 @@ namespace ContraptionMine
         void EndRun(bool success, string reason)
         {
             if (!running) return; running = false; Time.timeScale = 1; if (vehicle != null) { vehicle.body.simulated = false; foreach (var rb in FindObjectsByType<Rigidbody2D>(FindObjectsSortMode.None)) rb.simulated = false; }
-            if (success) { float rate = vehicle.cargo / Mathf.Max(elapsed, .1f) * 60 * Floor.multiplier * Floor.OreValue; bool best = rate > Current.best; Current.lastSuccess = new RunRecord { vehicle = Current.design.Copy(), ore = vehicle.cargo, seconds = elapsed, rate = rate }; Current.best = Mathf.Max(Current.best, rate); message = $"{(best ? "NEW BEST!" : "SUCCESS!")} {vehicle.cargo} ore · {elapsed:0.0}s · {rate:0}/min. " + (vehicle.cargo >= Floor.requiredOre ? (Current.automated == null ? "START PRODUCTION to use this hauler." : "REPLACE RECORD to use this hauler.") : $"Need {Floor.requiredOre} ore to automate; add cargo."); } else message = "TEST FAILED — " + reason;
+            if (success) { vehicle.DeliverySound(); float rate = vehicle.cargo / Mathf.Max(elapsed, .1f) * 60 * Floor.multiplier * Floor.OreValue; bool best = rate > Current.best; Current.lastSuccess = new RunRecord { vehicle = Current.design.Copy(), ore = vehicle.cargo, seconds = elapsed, rate = rate }; Current.best = Mathf.Max(Current.best, rate); message = $"{(best ? "NEW BEST!" : "SUCCESS!")} {vehicle.cargo} ore · {elapsed:0.0}s · {rate:0}/min. " + (vehicle.cargo >= Floor.requiredOre ? (Current.automated == null ? "START PRODUCTION to use this hauler." : "REPLACE RECORD to use this hauler.") : $"Need {Floor.requiredOre} ore to automate; add cargo."); } else message = "TEST FAILED — " + reason;
             Current.lastAttempt = new RunAttempt { success = success, reason = success ? (vehicle.cargo >= Floor.requiredOre ? "DELIVERY COMPLETE" : "DELIVERED — MORE ORE NEEDED") : reason, hint = RunHint(success, reason), ore = vehicle.cargo, seconds = elapsed, distance = progress, rate = success ? Current.lastSuccess.rate : 0, airSeconds = vehicle.airSeconds, impact = vehicle.peakImpact };
             showResults = true; Save(); Refresh();
         }

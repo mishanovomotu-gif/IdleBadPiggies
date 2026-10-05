@@ -56,3 +56,28 @@ Separate Mine, floor management, Workshop, Research, and Prestige views were ren
 Physical phone deployment and long-term human playtesting were not performed. Late-floor gates, costs, and multiplier curves are a first balance pass, intended for iteration after player feedback. The tests establish transaction correctness, save compatibility, functional progression, and starter completion rather than proving the economy's pacing is final.
 
 Preview artifacts: `Idle-mine-preview.png`, `Floor-management-preview.png`, `Workshop-preview.png`, `Research-preview.png`, `Prestige-preview.png`, and `Prestige-confirmation-preview.png`. Final runtime/editor scripts were compared with the compiled preview copy and matched.
+
+## Workshop interaction and run presentation — 2026-10-05
+
+- Unity integration exercised pointer drag handlers: tray-to-grid placement, grid-to-grid movement, return-to-tray removal, undo, and redo. All passed (`/tmp/contraption-workshop-smoke.log`).
+- All twelve courses completed in the same runtime validation, followed by fall/flip/stall/timeout/wheel-break feedback, save/load, idle progression, and prestige retention checks.
+- Workshop now uses direct drag gestures instead of Move/Delete modes. Invalid drops leave the design unchanged; disconnected parts are highlighted. Palette clicks still inspect/unlock parts.
+- A separate expanded run view hides the build grid, tracks the vehicle, and offers edit/retry and recorded-output comparison. Visual cargo movement is on a child sprite, preserving the cargo collider.
+- Final presentation adds exhaust/driver animation, landing dust, generated prototype audio, and a sound toggle. Final source compiled through UI preview capture after the full runtime pass. No physical model constants changed.
+- Desktop pointer events and portrait screenshots were checked. Real touch-device feel and the subjective sound mix still need hands-on playtesting.
+
+## Run UI cleanup and side deletion — 2026-10-05
+
+- Replaced cached-object cleanup with direct hierarchy cleanup, preserving only a dedicated persistent header. This prevents stale workshop and result controls from surviving when editor script reload loses the UI cache. Existing header layouts are rebuilt safely.
+- Integration tests clear the cached UI list before entering a run and again before refreshing run/results. Both screens contain one dashboard/result panel and no old workshop or stop controls. Legacy-header migration also passed.
+- Existing parts can be removed by dropping to either side of the grid, with a red drag preview and labeled right-side delete zone. Removal is undoable. Pointer integration verified side deletion together with placement, movement, undo, and redo.
+- Twelve-floor runtime regression, failure feedback, idle progression, and prestige checks passed: `/tmp/contraption-ui-fix-smoke.log`.
+- Layout/cache-loss captures passed: `/tmp/contraption-ui-run-fix.log`, `/tmp/contraption-ui-result-fix.log`, `/tmp/contraption-ui-delete-fix.log`. Result capture uses a synthetic successful-result fixture; course completion is checked separately by the runtime regression.
+
+## Full-height portrait layout — 2026-10-05
+
+- Tall portrait safe areas now use the full available height rather than a fixed 9:16 letterbox. UI stays at a uniform width scale; extra height enlarges the course, while workshop tools and run controls remain anchored above bottom navigation. A full-screen background camera covers safe-area margins.
+- Running/results have opaque control backings. The header clips to its own area, and script re-enable rebuilds the UI to discard stale layouts. Save Hauler uses a separate full-width row.
+- Tall snapshots use 540 × 1171 (matching the 1179 × 2556 reference aspect ratio). Workshop, run, and synthetic successful-result screenshots were inspected: no top/bottom bands, no underlying palette or build buttons, and separated actions.
+- Tall-screen pointer placement and side deletion, legacy header migration, and cache-loss UI checks passed: `/tmp/contraption-responsive-workshop.log`, `/tmp/contraption-responsive-run.log`, `/tmp/contraption-responsive-result-final.log`.
+- Safe-area bounds, twelve standalone blueprint courses, physics tradeoffs, and economy checks passed: `/tmp/contraption-responsive-validation.log`. Real-device safe-area behavior remains a hands-on check.

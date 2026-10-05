@@ -111,7 +111,7 @@ namespace ContraptionMineEditor
                 foreach (var area in new[] { new Rect(0, 0, 1080, 1920), new Rect(0, 0, 1179, 2556), new Rect(0, 0, 1920, 1080), new Rect(20, 60, 1139, 2400) })
                 {
                     var fit = MineViewport.Fit(area);
-                    if (fit.xMin < area.xMin - .01f || fit.yMin < area.yMin - .01f || fit.xMax > area.xMax + .01f || fit.yMax > area.yMax + .01f || Mathf.Abs(fit.width / fit.height - 1080f / 1920f) > .001f) throw new Exception("Portrait viewport overflow");
+                    if (fit.xMin < area.xMin - .01f || fit.yMin < area.yMin - .01f || fit.xMax > area.xMax + .01f || fit.yMax > area.yMax + .01f || (area.width / area.height <= 1080f / 1920f && (Mathf.Abs(fit.height - area.height) > .01f || Mathf.Abs(fit.width - area.width) > .01f))) throw new Exception("Portrait viewport overflow");
                 }
                 Debug.Log("PORTRAIT VIEWPORT FIT PASSED");
                 foreach (var f in fd)
@@ -131,6 +131,8 @@ namespace ContraptionMineEditor
         public static void CaptureMine() => Snapshot(0);
         public static void CaptureManagement() => Snapshot(4);
         public static void CaptureWorkshop() => Snapshot(1);
+        public static void CaptureRun() => Snapshot(6);
+        public static void CaptureResult() => Snapshot(7);
         public static void CaptureResearch() => Snapshot(2);
         public static void CapturePrestigeConfirmation() => Snapshot(5);
         public static void CapturePrestige() => Snapshot(3);

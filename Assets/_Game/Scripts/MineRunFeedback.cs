@@ -19,14 +19,14 @@ namespace ContraptionMine
         void RunResultPanel()
         {
             var attempt = Current.lastAttempt; if (!showResults || running || attempt == null) return;
-            Box("Test result", 28, 632, 1024, 313, Navy, true);
-            Label(attempt.success ? "DELIVERY COMPLETE!" : "TRY ANOTHER BUILD", 54, 644, 970, 43, 32, attempt.success ? new Color(.65f, 1, .33f) : Gold, true);
+            Box("Test result", 28, 1192, 1024, 255, Navy, true);
+            Label(attempt.success ? "DELIVERY COMPLETE!" : "TRY ANOTHER BUILD", 54, 1204, 970, 43, 32, attempt.success ? new Color(.65f, 1, .33f) : Gold, true);
             float change = attempt.rate - (Current.automated?.rate ?? 0);
-            Label($"{attempt.ore} {Floor.OreName} · {attempt.seconds:0.0}s · {attempt.distance:0}/{Floor.distance:0} m\n" + (attempt.success ? $"{attempt.rate:0}/min · {(change >= 0 ? "+" : "")}{change:0}/min vs SAVED RUN" : attempt.reason), 54, 691, 970, 77, 25, Color.white, true);
-            if (showTelemetry) Label($"AIRTIME {attempt.airSeconds:0.0}s · IMPACT {attempt.impact:0.0} m/s", 54, 769, 970, 33, 21, new Color(.43f, .85f, 1), true);
-            Label(attempt.hint, 54, 804, 970, 57, 22, Gold, true);
-            Button("RETRY", 54, 870, 470, 58, StartRun, Green, 26, true);
-            Button("MODIFY BUILD", 542, 870, 482, 58, () => { showResults = false; message = MineChallenges.Brief(Floor); Refresh(); }, Blue, 26, true);
+            Label($"{attempt.ore} {Floor.OreName} · {attempt.seconds:0.0}s · {attempt.distance:0}/{Floor.distance:0} m\n" + (attempt.success ? $"{attempt.rate:0}/min · {(change >= 0 ? "+" : "")}{change:0}/min vs SAVED RUN" : attempt.reason), 54, 1251, 970, 77, 25, Color.white, true);
+            if (showTelemetry) Label($"AIRTIME {attempt.airSeconds:0.0}s · IMPACT {attempt.impact:0.0} m/s", 54, 1329, 970, 33, 21, new Color(.43f, .85f, 1), true);
+            Label(attempt.hint, 54, 1364, 970, 57, 22, Gold, true);
+
+
         }
         void DecorateChallenges()
         {

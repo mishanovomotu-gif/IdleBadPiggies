@@ -7,10 +7,47 @@ namespace ContraptionMine
         public Rigidbody2D body; public int cargo; public float cargoMass, enginePower, totalMass; public bool broken; public float peakImpact, airSeconds; public int hardLandings; FloorData floor;
         readonly List<(Vector2 position, float force)> balloons = new(), fans = new();
         readonly List<Transform> rotors = new();
+        readonly List<(Transform item, Vector3 origin, bool smoke)> feedback = new();
+        AudioSource motorAudio; float impactPulse;
+        static AudioClip motorClip, impactClip, deliveryClip;
+        public static bool SoundEnabled = true;
+        public void DeliverySound() { if (SoundEnabled && motorAudio != null) AudioSource.PlayClipAtPoint(deliveryClip, transform.position, .18f); }
+        void AddFeedback(Transform item, bool smoke = false) => feedback.Add((item, item.localPosition, smoke));
+        void UpdateFeedback()
+        {
+            if (body == null) return;
+            bool active = body.simulated; float speed = body.linearVelocity.magnitude;
+            impactPulse = Mathf.MoveTowards(impactPulse, 0, Time.deltaTime * 4);
+            foreach (var f in feedback)
+            {
+                if (f.item == null) continue;
+                float phase = Time.time * (f.smoke ? 2 : 12) + f.origin.y * 8;
+                f.item.localPosition = f.origin + (active ? new Vector3(Mathf.Sin(phase) * .025f, f.smoke ? Mathf.Repeat(Time.time * .5f + f.origin.y, .5f) : Mathf.Sin(phase) * (.015f + impactPulse * .035f), 0) : Vector3.zero);
+                if (!f.smoke) f.item.localRotation = Quaternion.Euler(0, 0, active ? Mathf.Clamp(-body.linearVelocity.y * 2, -12, 12) + Mathf.Sin(phase) * impactPulse * 4 : 0);
+            }
+            if (motorAudio != null) { motorAudio.volume = active && SoundEnabled ? .055f : 0; motorAudio.pitch = .7f + Mathf.Clamp(speed * .055f, 0, .8f); }
+        }
+        void InitializeAudio()
+        {
+            if (motorClip == null)
+            {
+                const int samples = 22050; var sound = new float[samples];
+                for (int i = 0; i < samples; i++) { float t = i / 22050f; sound[i] = Mathf.Sin(t * Mathf.PI * 2 * 90) * .3f + Mathf.Sin(t * Mathf.PI * 2 * 180) * .12f; }
+                motorClip = AudioClip.Create("Hauler motor", samples, 1, 22050, false); motorClip.SetData(sound, 0);
+            }
+            if (impactClip == null) { impactClip = Tone("Landing", 85, .12f); deliveryClip = Tone("Delivery", 660, .35f); }
+            motorAudio = gameObject.AddComponent<AudioSource>(); motorAudio.clip = motorClip; motorAudio.loop = true; motorAudio.volume = 0; motorAudio.Play();
+        }
         static readonly Dictionary<float, PhysicsMaterial2D> GripMaterials = new();
         readonly List<AxleVisual> axles = new();
         sealed class AxleVisual { public Transform beam, wheel; public Vector2 mount; }
         readonly List<WheelJoint2D> wheels = new(); readonly List<Rigidbody2D> wheelBodies = new(); float lift; bool spring;
+        static AudioClip Tone(string name, float frequency, float duration)
+        {
+            int count = (int)(22050 * duration); var data = new float[count];
+            for (int i = 0; i < count; i++) { float t = i / 22050f; data[i] = Mathf.Sin(t * Mathf.PI * 2 * frequency) * (1 - i / (float)count); }
+            var clip = AudioClip.Create(name, count, 1, 22050, false); clip.SetData(data, 0); return clip;
+        }
         public static Sprite Square, Circle; static Material spriteMaterial;
         public static void InitSprites()
         {
@@ -33,8 +70,9 @@ namespace ContraptionMine
                 if (p.type == PartType.Balloon) v.balloons.Add((pos, d.lift * (1 + .12f * (lv - 1))));
                 if (p.type == PartType.Propeller) v.fans.Add((pos, d.Power(lv)));
                 var o = Shape(d.label, root.transform, pos, Vector2.one * .88f, d.color, p.type == PartType.Balloon); o.GetComponent<SpriteRenderer>().sprite = MineArt.Icon(p.type, course != null ? course.oreType : OreType.Crystal); o.GetComponent<SpriteRenderer>().color = Color.white; o.transform.localRotation = Quaternion.Euler(0, 0, p.rotation); if (p.type != PartType.Balloon) { var col = o.AddComponent<BoxCollider2D>(); col.size = Vector2.one; }
+                if (p.type == PartType.Cargo) { var art = Shape("Cargo visual", o.transform, Vector2.zero, Vector2.one, Color.white, false, 3); art.GetComponent<SpriteRenderer>().sprite = o.GetComponent<SpriteRenderer>().sprite; o.GetComponent<SpriteRenderer>().enabled = false; v.AddFeedback(art.transform); }
                 if (p.type == PartType.Propeller) { var rotor = Shape("Propeller hub", o.transform, new Vector2(0, .05f), Vector2.one, Color.clear, true, 5); Shape("Rotor blade", rotor.transform, Vector2.zero, new Vector2(.78f, .09f), new Color(.79f, .88f, .96f), false, 5); Shape("Rotor blade", rotor.transform, Vector2.zero, new Vector2(.09f, .78f), new Color(.79f, .88f, .96f), false, 5); Shape("Rotor bolt", rotor.transform, Vector2.zero, Vector2.one * .14f, new Color(1, .73f, .2f), true, 6); v.rotors.Add(rotor.transform); }
-                if (d.IsEngine) { var pig = Shape("Piggy driver", o.transform, new Vector2(-.18f, .77f), new Vector2(.75f, .75f), Color.white, false, 5); pig.GetComponent<SpriteRenderer>().sprite = MineArt.Pig; for (int i = 0; i < 3; i++) Shape("Steam", o.transform, new Vector2(.26f + i * .07f, .85f + i * .2f), Vector2.one * (.16f + i * .035f), new Color(.86f, .92f, 1, .7f - i * .14f), true, 3); }
+                if (d.IsEngine) { var pig = Shape("Piggy driver", o.transform, new Vector2(-.18f, .77f), new Vector2(.75f, .75f), Color.white, false, 5); pig.GetComponent<SpriteRenderer>().sprite = MineArt.Pig; v.AddFeedback(pig.transform); for (int i = 0; i < 3; i++) v.AddFeedback(Shape("Steam", o.transform, new Vector2(.26f + i * .07f, .85f + i * .2f), Vector2.one * (.16f + i * .035f), new Color(.86f, .92f, 1, .7f - i * .14f), true, 3).transform, true); }
             }
             // The rigid body already joins all structural parts; show those connections too.
             foreach (var a in design.parts) foreach (var b in design.parts)
@@ -59,9 +97,9 @@ namespace ContraptionMine
                 if (mountPart != null) { var mount = new Vector2(mountPart.x - 3.5f, mountPart.y - 1); var beam = Shape("Suspension arm", root.transform, Vector2.zero, Vector2.one, new Color(.47f, .57f, .69f), false, 3); v.axles.Add(new AxleVisual { beam = beam.transform, wheel = w.transform, mount = mount }); }
                 v.UpdateAxles(); v.totalMass += d.mass;
             }
-            return v;
+            v.InitializeAudio(); return v;
         }
-        void LateUpdate() { UpdateAxles(); foreach (var rotor in rotors) if (rotor != null) rotor.localRotation = Quaternion.Euler(0, 0, Time.time * (body.simulated ? 900 : 0)); }
+        void LateUpdate() { UpdateAxles(); UpdateFeedback(); foreach (var rotor in rotors) if (rotor != null) rotor.localRotation = Quaternion.Euler(0, 0, Time.time * (body.simulated ? 900 : 0)); }
         void UpdateAxles() { foreach (var axle in axles) { if (axle.wheel == null) continue; Vector2 end = transform.InverseTransformPoint(axle.wheel.position); Vector2 delta = end - axle.mount; axle.beam.localPosition = (axle.mount + end) * .5f; axle.beam.localScale = new Vector3(delta.magnitude, .12f, 1); axle.beam.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg); } }
         void FixedUpdate() => StepPhysics(Time.fixedDeltaTime);
         public void StepPhysics(float dt)
@@ -79,9 +117,15 @@ namespace ContraptionMine
         void OnCollisionEnter2D(Collision2D hit) => RecordImpact(hit);
         public void RecordImpact(Collision2D hit)
         {
-            float impact = hit.contactCount > 0 ? Mathf.Abs(Vector2.Dot(hit.relativeVelocity, hit.GetContact(0).normal)) : hit.relativeVelocity.magnitude; peakImpact = Mathf.Max(peakImpact, impact); if (impact > 7) hardLandings++;
+            float impact = hit.contactCount > 0 ? Mathf.Abs(Vector2.Dot(hit.relativeVelocity, hit.GetContact(0).normal)) : hit.relativeVelocity.magnitude; if (impact > 4 && hit.contactCount > 0) for (int i = 0; i < 4; i++) { var dust = Shape("Landing dust", null, hit.GetContact(0).point + Vector2.right * (i - 1.5f) * .15f, Vector2.one * .22f, new Color(.9f, .7f, .4f, .65f), true, 8); dust.AddComponent<LandingDust>().velocity = new Vector2((i - 1.5f) * .65f, .5f + i * .12f); }
+            if (impact > 3 && motorAudio != null && SoundEnabled) motorAudio.PlayOneShot(impactClip, Mathf.Min(.3f, impact * .025f)); impactPulse = Mathf.Min(impact, 10); peakImpact = Mathf.Max(peakImpact, impact); if (impact > 7) hardLandings++;
         }
         public void Dispose() { foreach (var w in wheelBodies) if (w != null) Destroy(w.gameObject); Destroy(gameObject); }
+    }
+    public sealed class LandingDust : MonoBehaviour
+    {
+        public Vector2 velocity; float age;
+        void Update() { age += Time.deltaTime; transform.position += (Vector3)velocity * Time.deltaTime; transform.localScale = Vector3.one * (.22f + age * .6f); var sr = GetComponent<SpriteRenderer>(); sr.color = new Color(.9f, .7f, .4f, Mathf.Max(0, .65f - age)); if (age > .65f) Destroy(gameObject); }
     }
     public sealed class WheelImpactReporter : MonoBehaviour
     {
